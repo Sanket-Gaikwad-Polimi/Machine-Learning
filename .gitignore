@@ -1,0 +1,11 @@
+# Local only: Python environment, model weights
+.venv/
+outputs/checkpoints/
+
+# Secrets
+kaggle.json
+
+# Python and Jupyter clutter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
