@@ -25,6 +25,19 @@ SPLIT_FILE = RESULTS / "split.json"
 DEFECT_TYPES = ["manipulated_front", "scratch_head", "scratch_neck",
                 "thread_side", "thread_top"]
 
+# Brightness normalisation (optional, OFF by default).
+# EDA finding: test/good images are darker (mean ~0.665) than train/good (~0.72)
+# and defective test images (~0.73), which can cause false alarms on good screws.
+# Plan, decided a priori and never tuned on test results:
+#  - load_image(..., normalize_brightness=True) shifts each image so its mean
+#    equals TARGET_BRIGHTNESS, a fixed value taken from the 280 TRAIN images only;
+#  - the robustness step checks score stability on the 40 VALIDATION images
+#    under brightness changes;
+#  - both models are reported with and without normalisation.
+# Resolution: main results at IMG_SIZE = 256; a larger size only as a reported
+# comparison, never chosen by test scores.
+TARGET_BRIGHTNESS = 0.72  # mean pixel value of the 280 train/good images (EDA, rounded)
+
 # ImageNet statistics, needed because the pretrained backbone was trained on them.
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
@@ -63,11 +76,18 @@ def list_test():
     return items
 
 
-def load_image(rel_path, size=IMG_SIZE):
-    """Greyscale image as float32 H x W in [0, 1], resized with bilinear filtering."""
+def load_image(rel_path, size=IMG_SIZE, normalize_brightness=False):
+    """Greyscale image as float32 H x W in [0, 1], resized with bilinear filtering.
+
+    normalize_brightness=True shifts the image so its mean is TARGET_BRIGHTNESS
+    (then clips to [0, 1]), removing the overall light level difference.
+    """
     img = Image.open(DATA_DIR / rel_path).convert("L")
     img = img.resize((size, size), Image.Resampling.BILINEAR)
-    return np.asarray(img, dtype=np.float32) / 255.0
+    img = np.asarray(img, dtype=np.float32) / 255.0
+    if normalize_brightness:
+        img = np.clip(img - img.mean() + TARGET_BRIGHTNESS, 0.0, 1.0)
+    return img
 
 
 def load_mask(rel_path, size=IMG_SIZE):
@@ -83,9 +103,9 @@ def load_mask(rel_path, size=IMG_SIZE):
     return (np.asarray(m) > 127).astype(np.uint8)
 
 
-def load_images(rel_paths, size=IMG_SIZE):
+def load_images(rel_paths, size=IMG_SIZE, normalize_brightness=False):
     """Stack several images into one float32 array N x H x W."""
-    return np.stack([load_image(p, size) for p in rel_paths])
+    return np.stack([load_image(p, size, normalize_brightness) for p in rel_paths])
 
 
 def to_tensor(images, imagenet=False):
