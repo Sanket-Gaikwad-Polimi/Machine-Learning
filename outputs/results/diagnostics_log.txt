@@ -1,0 +1,47 @@
+POST-HOC DIAGNOSTIC - validation images only, frozen models and thresholds
+sha256 metrics.csv: c6c390eadf86a254a8d329ff3b191f28e7131faf3230c8ef6ea21f8d517bf67d
+sha256 robustness.csv: 04d7f5cd9ff90540d4414eb9ce4a9aa0677d198a6ce509c0b26eba16a6cfb393
+sha256 thresholds.csv: 8e6ecaf0a8a2f9c065b7085e8073503f26f8178e667f774f84a96e471bcce700
+[ae_raw] clean vs ae_raw_val_scores.csv: max abs diff 4.05e-10 | clean_via_1024 vs clean: max abs diff 0.00e+00
+[ae_bn] clean vs ae_bn_val_scores.csv: max abs diff 4.29e-10 | clean_via_1024 vs clean: max abs diff 0.00e+00
+[pc_raw] clean vs pc_raw_val_scores.csv: max abs diff 4.93e-08 | clean_via_1024 vs clean: max abs diff 0.00e+00
+[pc_bn] clean vs pc_bn_val_scores.csv: max abs diff 4.99e-08 | clean_via_1024 vs clean: max abs diff 0.00e+00
+
+reference check vs robustness.csv (val_frr, val_mean_rel_change):
+  ae_raw rotate_10 here 0.000 / -0.1558   robustness.csv 0.000 / -0.1558
+  ae_raw noise     here 0.025 / +0.0548   robustness.csv 0.025 / +0.0548
+  ae_bn  rotate_10 here 0.000 / -0.1828   robustness.csv 0.000 / -0.1828
+  ae_bn  noise     here 0.025 / +0.0618   robustness.csv 0.025 / +0.0618
+  pc_raw rotate_10 here 1.000 / +0.7226   robustness.csv 1.000 / +0.7226
+  pc_raw noise     here 1.000 / +0.4195   robustness.csv 1.000 / +0.4195
+  pc_bn  rotate_10 here 1.000 / +0.7368   robustness.csv 1.000 / +0.7368
+  pc_bn  noise     here 1.000 / +0.4246   robustness.csv 1.000 / +0.4246
+
+val_frr:
+variant             ae_raw  ae_bn  pc_raw  pc_bn
+condition                                       
+clean                0.025  0.025   0.025  0.025
+rotate_10_256        0.000  0.000   1.000  1.000
+noise_256            0.025  0.025   1.000  1.000
+rot90                0.025  0.025   0.975  1.000
+rot10_reflect_1024   0.050  0.025   0.200  0.250
+wedges_only          0.025  0.025   1.000  1.000
+noise_1024           0.025  0.025   0.025  0.025
+clean_via_1024       0.025  0.025   0.025  0.025
+rot10_reflect_256    0.000  0.000   0.325  0.425
+
+mean_rel_change (%):
+variant             ae_raw  ae_bn  pc_raw  pc_bn
+condition                                       
+clean                  0.0    0.0     0.0    0.0
+rotate_10_256        -15.6  -18.3    72.3   73.7
+noise_256              5.5    6.2    41.9   42.5
+rot90                 -0.8   -1.4    31.7   32.0
+rot10_reflect_1024    -3.6   -4.5     8.9    9.3
+wedges_only            0.4    0.2    68.6   70.4
+noise_1024            -0.0    0.2     0.1    0.1
+clean_via_1024         0.0    0.0     0.0    0.0
+rot10_reflect_256    -19.6  -22.4    15.0   15.1
+
+frozen files unchanged (sha256 identical before and after)
+run time: 76 s
