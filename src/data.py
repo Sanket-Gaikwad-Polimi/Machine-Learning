@@ -86,8 +86,18 @@ def load_image(rel_path, size=IMG_SIZE, normalize_brightness=False):
     img = img.resize((size, size), Image.Resampling.BILINEAR)
     img = np.asarray(img, dtype=np.float32) / 255.0
     if normalize_brightness:
-        img = np.clip(img - img.mean() + TARGET_BRIGHTNESS, 0.0, 1.0)
+        img = shift_brightness(img)
     return img
+
+
+def shift_brightness(images):
+    """Move the mean of each image (H x W or N x H x W) to TARGET_BRIGHTNESS, clip to [0, 1].
+
+    Used by load_image and by the models, so both apply exactly the same rule.
+    """
+    images = np.asarray(images, dtype=np.float32)
+    means = images.mean(axis=(-2, -1), keepdims=True)
+    return np.clip(images - means + TARGET_BRIGHTNESS, 0.0, 1.0)
 
 
 def load_mask(rel_path, size=IMG_SIZE):
