@@ -9,3 +9,10 @@ kaggle.json
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+
+# Safe re-runs (evaluate.py --out-dir) and downloaded model zips
+outputs/rerun*/
+*.zip
+
+# Self-test figure from fake numbers (python -m src.metrics)
+outputs/figures/metrics_selftest_roc.png

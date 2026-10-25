@@ -24,7 +24,16 @@ Phase C  report from the saved files (no model)     -> results/metrics.csv, per_
 Console output is also written to results/evaluate_log.txt.
 
 If a figure needs fixing after the run: python evaluate.py --report-only
-(redoes Phase C from the saved scores; no model or threshold is touched).
+(redoes Phase C from the saved scores; no model or threshold is touched; it prints to
+the screen only, so the log of the official run stays as it was).
+
+Safe re-run (the official files are never touched): python evaluate.py --out-dir outputs/rerun
+  Same code, settings and threshold rules, but every output (thresholds, scores, heat-maps,
+  metrics, figures, log) goes to <out-dir>/results, <out-dir>/figures, <out-dir>/checkpoints.
+  Models are read from outputs/checkpoints; a missing one is built from train/val only and
+  saved in <out-dir>/checkpoints. The folder must not be (or contain, or be inside) an
+  official folder; a folder that already holds a finished run is refused.
+  python evaluate.py --report-only --out-dir outputs/rerun redoes Phase C of that folder.
 """
 import argparse
 import gc
@@ -32,6 +41,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -43,7 +53,7 @@ from src.data import DEFECT_TYPES, get_split, list_test, load_images, load_mask
 from src.metrics import (Q_IMAGE, Q_PIXEL, image_metrics, per_defect_table, pixel_metrics,
                          plot_roc, threshold_from_val)
 from src.patchcore import PatchCoreDetector
-from src.paths import CHECKPOINTS, FIGURES, RESULTS, ROOT
+from src.paths import CHECKPOINTS, DATA_DIR, FIGURES, OUTPUTS, RESULTS, ROOT
 
 # name: (class, checkpoint, module that builds it, normalize_brightness)
 VARIANTS = {
@@ -52,6 +62,11 @@ VARIANTS = {
     "pc_raw": (PatchCoreDetector, "patchcore_bank.pt", "src.patchcore", False),
     "pc_bn": (PatchCoreDetector, "patchcore_bank_bn.pt", "src.patchcore", True),
 }
+
+# Where this run writes: the official folders, unless --out-dir moves all three
+# into one separate folder (OUT_DIR), so a re-run never touches the official files.
+OUT_DIR = None
+RES_DIR, FIG_DIR, HEAT_DIR = RESULTS, FIGURES, CHECKPOINTS
 
 
 # ---- perturbations (fixed a priori, see docstring) -------------------------------
@@ -96,9 +111,15 @@ class _Tee:
             st.flush()
 
 
+def _model_path(name):
+    """The official checkpoint; in an --out-dir run, a missing one lives in <out-dir>/checkpoints."""
+    official = CHECKPOINTS / VARIANTS[name][1]
+    return official if official.exists() or OUT_DIR is None else HEAT_DIR / official.name
+
+
 def _load(name):
     cls, file, _, bn = VARIANTS[name]
-    det = cls.load(CHECKPOINTS / file)
+    det = cls.load(_model_path(name))
     assert det.config["normalize_brightness"] == bn, f"{file}: wrong normalize_brightness"
     return det
 
@@ -110,6 +131,27 @@ def _free(det):
         torch.cuda.empty_cache()
 
 
+def _build(name, path):
+    """--out-dir only: build a missing model from the 280 train / 40 val images like its module
+    (python -m src.autoencoder / src.patchcore) does, but save it only to `path`
+    (the module would also write its figures and history into outputs/)."""
+    cls, _, _, bn = VARIANTS[name]
+    split = get_split()
+    train = load_images(split["train"])
+    if cls is AutoencoderDetector:
+        val = load_images(split["val"])
+        try:
+            det = cls(normalize_brightness=bn).fit(train, val)
+        except torch.cuda.OutOfMemoryError:                  # same fallback as src/autoencoder.py
+            torch.cuda.empty_cache()
+            print("out of GPU memory, retrying with batch size 4")
+            det = cls(normalize_brightness=bn, batch_size=4).fit(train, val)
+    else:
+        det = cls(normalize_brightness=bn).fit(train)
+    det.save(path)
+    _free(det)
+
+
 # ---- Phase A: validation only -----------------------------------------------------
 def phase_a():
     split = get_split()
@@ -117,8 +159,12 @@ def phase_a():
     val_pert = {p: f(val_images) for p, f in PERTURBATIONS.items()}
     frozen, val_rob = [], {}
     for name, (_, file, module, bn) in VARIANTS.items():
-        path = CHECKPOINTS / file
-        if not path.exists():
+        path = _model_path(name)
+        if not path.exists() and OUT_DIR is not None:
+            print(f"[{name}] {file} missing in {CHECKPOINTS} -> building it (train/val only), "
+                  f"saved only to {path}")
+            _build(name, path)
+        elif not path.exists():
             print(f"[{name}] {file} missing -> building it with `python -m {module}` (train/val only)")
             r = subprocess.run([sys.executable, "-m", module] + (["--normalize-brightness"] if bn else []),
                                cwd=ROOT, capture_output=True, text=True)
@@ -129,7 +175,7 @@ def phase_a():
         det = _load(name)
         print(f"[{name}] {path} (modified {datetime.fromtimestamp(path.stat().st_mtime):%Y-%m-%d %H:%M})")
         s, m = det.predict_many(val_images)
-        pd.DataFrame({"file": val_files, "score": s}).to_csv(RESULTS / f"{name}_val_scores.csv", index=False)
+        pd.DataFrame({"file": val_files, "score": s}).to_csv(RES_DIR / f"{name}_val_scores.csv", index=False)
         frozen.append({"variant": name, "T_image": threshold_from_val(s, Q_IMAGE),
                        "T_pixel": threshold_from_val(m, Q_PIXEL),
                        "val_min": float(s.min()), "val_median": float(np.median(s)),
@@ -137,7 +183,7 @@ def phase_a():
         val_rob[name] = {"clean": s, **{p: det.predict_many(x)[0] for p, x in val_pert.items()}}
         _free(det)
     th = pd.DataFrame(frozen)
-    th.to_csv(RESULTS / "thresholds.csv", index=False)
+    th.to_csv(RES_DIR / "thresholds.csv", index=False)
     print(th.to_string(index=False))
     print("THRESHOLDS FROZEN\n")
     return th.set_index("variant"), val_rob
@@ -160,8 +206,8 @@ def phase_b(th, val_rob):
         print(f"[{name}] scored the test set in {time.time() - t0:.1f} s")
         df = pd.DataFrame({"file": files, "defect": [t["defect"] for t in test], "label": labels, "score": s})
         df["pred"] = (df.score > T).astype(int)
-        df.to_csv(RESULTS / f"{name}_scores.csv", index=False)
-        np.savez_compressed(CHECKPOINTS / f"{name}_heatmaps.npz", heatmaps=m.astype(np.float32),
+        df.to_csv(RES_DIR / f"{name}_scores.csv", index=False)
+        np.savez_compressed(HEAT_DIR / f"{name}_heatmaps.npz", heatmaps=m.astype(np.float32),
                             files=np.array(files))
         del m
         v0 = val_rob[name]["clean"]
@@ -173,7 +219,7 @@ def phase_b(th, val_rob):
                          "val_frr": float((vs > T).mean()), "test_auroc": im["auroc"],
                          "test_frr": im["false_reject_rate"], "test_recall": im["recall"]})
         _free(det)
-    pd.DataFrame(rows).to_csv(RESULTS / "robustness.csv", index=False)
+    pd.DataFrame(rows).to_csv(RES_DIR / "robustness.csv", index=False)
     print()
 
 
@@ -215,13 +261,13 @@ def _plot_examples(name, df, maps, images, masks, t):
         a.axis("off")
     fig.suptitle(f"{name}: examples chosen by fixed rules")
     fig.tight_layout()
-    fig.savefig(FIGURES / f"eval_examples_{name}.png", dpi=70)
+    fig.savefig(FIG_DIR / f"eval_examples_{name}.png", dpi=70)
     plt.close(fig)
 
 
 def phase_c():
     import matplotlib.pyplot as plt
-    th = pd.read_csv(RESULTS / "thresholds.csv").set_index("variant")
+    th = pd.read_csv(RES_DIR / "thresholds.csv").set_index("variant")
     test = list_test()
     files = [t["file"] for t in test]
     labels = np.array([t["label"] for t in test])
@@ -229,9 +275,9 @@ def phase_c():
     masks = np.stack([load_mask(t["mask"]) for t in test])
     results = {}
     for name in VARIANTS:
-        df = pd.read_csv(RESULTS / f"{name}_scores.csv")
+        df = pd.read_csv(RES_DIR / f"{name}_scores.csv")
         assert list(df.file) == files
-        results[name] = (df, np.load(CHECKPOINTS / f"{name}_heatmaps.npz")["heatmaps"])
+        results[name] = (df, np.load(HEAT_DIR / f"{name}_heatmaps.npz")["heatmaps"])
 
     # 8. metrics
     metric_rows, defect_tables = [], []
@@ -251,16 +297,16 @@ def phase_c():
     metrics = pd.DataFrame(metric_rows)
     per_defect = pd.concat(defect_tables)[["variant", "defect", "n", "flagged", "recall",
                                            "auroc_vs_good", "iou", "dice"]]
-    metrics.to_csv(RESULTS / "metrics.csv", index=False)
-    per_defect.to_csv(RESULTS / "per_defect.csv", index=False)
+    metrics.to_csv(RES_DIR / "metrics.csv", index=False)
+    per_defect.to_csv(RES_DIR / "per_defect.csv", index=False)
 
     # 9. ROC
-    plot_roc(labels, {name: df.score for name, (df, _) in results.items()}, FIGURES / "eval_roc.png")
+    plot_roc(labels, {name: df.score for name, (df, _) in results.items()}, FIG_DIR / "eval_roc.png")
 
     # 10. score histograms
     fig, axes = plt.subplots(2, 2, figsize=(11, 7))
     for ax, (name, (df, _)) in zip(axes.flat, results.items()):
-        val = pd.read_csv(RESULTS / f"{name}_val_scores.csv").score
+        val = pd.read_csv(RES_DIR / f"{name}_val_scores.csv").score
         allv = np.r_[df.score, val]
         bins = np.linspace(allv.min(), allv.max(), 40)
         ax.hist(df.score[df.label == 0], bins=bins, alpha=0.6, label="test good (41)")
@@ -271,7 +317,7 @@ def phase_c():
         ax.set_xlabel("anomaly score")
         ax.legend(fontsize=7)
     fig.tight_layout()
-    fig.savefig(FIGURES / "eval_score_hist.png", dpi=100)
+    fig.savefig(FIG_DIR / "eval_score_hist.png", dpi=100)
     plt.close(fig)
 
     # 11. examples
@@ -296,7 +342,7 @@ def phase_c():
         ax.set_title(name)
         ax.legend(fontsize=7)
     fig.tight_layout()
-    fig.savefig(FIGURES / "eval_score_vs_area.png", dpi=100)
+    fig.savefig(FIG_DIR / "eval_score_vs_area.png", dpi=100)
     plt.close(fig)
 
     # 13. summary
@@ -311,7 +357,7 @@ def phase_c():
     print("\nAUROC per defect type (vs test good):")
     print(pd_bad.pivot(index="defect", columns="variant", values="auroc_vs_good")[list(VARIANTS)]
           .round(3).to_string())
-    rob = pd.read_csv(RESULTS / "robustness.csv")
+    rob = pd.read_csv(RES_DIR / "robustness.csv")
     order = ["clean"] + list(PERTURBATIONS)
     for col in ("test_auroc", "test_frr", "val_frr", "val_mean_rel_change"):
         print(f"\nrobustness: {col}")
@@ -319,19 +365,55 @@ def phase_c():
               .round(3).to_string())
 
 
+def _check_out_dir(out):
+    """--out-dir must be a separate folder: not an official folder or the dataset, not inside
+    one of them, and not a folder that contains them (such as outputs/ or the project root)."""
+    for p in (RESULTS, FIGURES, CHECKPOINTS, DATA_DIR):
+        p = p.resolve()
+        if out == p or p in out.parents or out in p.parents:
+            sys.exit(f"--out-dir {out} is not allowed: it overlaps {p}. Use a new folder, e.g. outputs/rerun")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Final, one-time evaluation on the test set.")
     parser.add_argument("--report-only", action="store_true",
                         help="only redo Phase C (tables and figures) from the saved scores")
+    parser.add_argument("--out-dir", help="safe re-run: write every output into this folder, e.g. "
+                                          "outputs/rerun (the official files are never touched)")
     args = parser.parse_args()
-    log = open(RESULTS / "evaluate_log.txt", "a" if args.report_only else "w", encoding="utf-8")
-    sys.stdout = _Tee(sys.__stdout__, log)
+
+    # every check comes BEFORE any file is opened, so a refused run changes nothing
+    if args.out_dir:
+        OUT_DIR = Path(args.out_dir)
+        OUT_DIR = (OUT_DIR if OUT_DIR.is_absolute() else ROOT / OUT_DIR).resolve()
+        _check_out_dir(OUT_DIR)
+        RES_DIR, FIG_DIR, HEAT_DIR = OUT_DIR / "results", OUT_DIR / "figures", OUT_DIR / "checkpoints"
+    if args.report_only:
+        missing = [str(p) for p in [RES_DIR / "robustness.csv"] +
+                   [HEAT_DIR / f"{v}_heatmaps.npz" for v in VARIANTS] if not p.exists()]
+        if missing:
+            sys.exit("--report-only needs the saved scores and heat-maps of a finished run. Missing:\n  "
+                     + "\n  ".join(missing) + ("\n(download the Release, see README.md)" if OUT_DIR is None else ""))
+    elif (RES_DIR / "metrics.csv").exists():
+        if OUT_DIR is None:
+            sys.exit("metrics.csv exists: the evaluation was already run. Use --report-only for figures, "
+                     "or --out-dir outputs/rerun for a separate re-run.")
+        sys.exit(f"{OUT_DIR} already holds a finished run: delete it or choose a new folder, e.g. outputs/rerun2")
+
+    if OUT_DIR is not None:
+        for d in (RES_DIR, FIG_DIR, HEAT_DIR):
+            d.mkdir(parents=True, exist_ok=True)
+    if OUT_DIR is not None or not args.report_only:
+        log = open(RES_DIR / "evaluate_log.txt", "a" if args.report_only else "w", encoding="utf-8")
+        sys.stdout = _Tee(sys.__stdout__, log)
+    # (an official --report-only prints to the screen only: the log of the official run stays as it was)
     t0 = time.time()
     print(f"evaluate.py started {datetime.now():%Y-%m-%d %H:%M}"
-          + (" (report only)" if args.report_only else ""))
+          + (" (report only)" if args.report_only else "")
+          + (f" | out-dir {OUT_DIR}" if OUT_DIR is not None else ""))
+    if OUT_DIR is not None and not (OUT_DIR.parent == OUTPUTS.resolve() and OUT_DIR.name.startswith("rerun")):
+        print(f"note: git only ignores outputs/rerun*/, not {OUT_DIR}: never commit it")
     if not args.report_only:
-        if (RESULTS / "metrics.csv").exists():
-            sys.exit("metrics.csv exists: the evaluation was already run. Use --report-only for figures.")
         print("== PHASE A: validation only ==")
         thresholds, val_rob = phase_a()
         print("== PHASE B: test set ==")
