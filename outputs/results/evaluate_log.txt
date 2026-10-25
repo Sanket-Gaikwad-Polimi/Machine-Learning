@@ -1,0 +1,286 @@
+evaluate.py started 2026-10-25 16:09
+== PHASE A: validation only ==
+[ae_raw] D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\autoencoder.pt (modified 2026-10-25 15:29)
+[ae_bn] autoencoder_bn.pt missing -> building it with `python -m src.autoencoder` (train/val only)
+ConvAutoencoder(
+  (encoder): Sequential(
+    (0): Sequential(
+      (0): Conv2d(1, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (1): Sequential(
+      (0): Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (2): Sequential(
+      (0): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (3): Sequential(
+      (0): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (4): Sequential(
+      (0): Conv2d(256, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (5): Conv2d(256, 32, kernel_size=(1, 1), stride=(1, 1))
+  )
+  (decoder): Sequential(
+    (0): Conv2d(32, 256, kernel_size=(1, 1), stride=(1, 1))
+    (1): LeakyReLU(negative_slope=0.2)
+    (2): Sequential(
+      (0): ConvTranspose2d(256, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (3): Sequential(
+      (0): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (4): Sequential(
+      (0): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (5): Sequential(
+      (0): ConvTranspose2d(64, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0.2)
+    )
+    (6): ConvTranspose2d(32, 1, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+    (7): Sigmoid()
+  )
+)
+device: cuda | parameters: 3,494,753
+epoch   1/120  train 0.03681  val 0.01187  (1.9 s)  *best
+epoch   2/120  train 0.01164  val 0.00677  (1.5 s)  *best
+epoch   3/120  train 0.00652  val 0.00447  (1.5 s)  *best
+epoch   4/120  train 0.00424  val 0.00310  (1.5 s)  *best
+epoch   5/120  train 0.00313  val 0.00240  (1.5 s)  *best
+epoch   6/120  train 0.00228  val 0.00194  (1.5 s)  *best
+epoch   7/120  train 0.00194  val 0.00183  (1.5 s)  *best
+epoch   8/120  train 0.00171  val 0.00146  (1.5 s)  *best
+epoch   9/120  train 0.00154  val 0.00140  (1.5 s)  *best
+epoch  10/120  train 0.00143  val 0.00133  (1.5 s)  *best
+epoch  11/120  train 0.00131  val 0.00128  (1.5 s)  *best
+epoch  12/120  train 0.00122  val 0.00122  (1.5 s)  *best
+epoch  13/120  train 0.00115  val 0.00109  (1.5 s)  *best
+epoch  14/120  train 0.00112  val 0.00111  (1.4 s)
+epoch  15/120  train 0.00107  val 0.00106  (1.5 s)  *best
+epoch  16/120  train 0.00102  val 0.00097  (1.5 s)  *best
+epoch  17/120  train 0.00099  val 0.00105  (1.4 s)
+epoch  18/120  train 0.00096  val 0.00092  (1.5 s)  *best
+epoch  19/120  train 0.00090  val 0.00094  (1.4 s)
+epoch  20/120  train 0.00087  val 0.00084  (1.4 s)  *best
+epoch  21/120  train 0.00084  val 0.00085  (1.4 s)
+epoch  22/120  train 0.00080  val 0.00076  (1.4 s)  *best
+epoch  23/120  train 0.00078  val 0.00083  (1.4 s)
+epoch  24/120  train 0.00076  val 0.00077  (1.4 s)
+epoch  25/120  train 0.00074  val 0.00070  (1.5 s)  *best
+epoch  26/120  train 0.00072  val 0.00071  (1.4 s)
+epoch  27/120  train 0.00068  val 0.00079  (1.5 s)
+epoch  28/120  train 0.00067  val 0.00071  (1.4 s)
+epoch  29/120  train 0.00062  val 0.00058  (1.4 s)  *best
+epoch  30/120  train 0.00059  val 0.00061  (1.4 s)
+epoch  31/120  train 0.00059  val 0.00059  (1.4 s)
+epoch  32/120  train 0.00055  val 0.00056  (1.5 s)  *best
+epoch  33/120  train 0.00053  val 0.00054  (1.4 s)  *best
+epoch  34/120  train 0.00055  val 0.00056  (1.4 s)
+epoch  35/120  train 0.00053  val 0.00051  (1.4 s)  *best
+epoch  36/120  train 0.00052  val 0.00054  (1.5 s)
+epoch  37/120  train 0.00050  val 0.00049  (1.5 s)  *best
+epoch  38/120  train 0.00048  val 0.00051  (1.4 s)
+epoch  39/120  train 0.00051  val 0.00052  (1.4 s)
+epoch  40/120  train 0.00050  val 0.00047  (1.5 s)  *best
+epoch  41/120  train 0.00048  val 0.00050  (1.5 s)
+epoch  42/120  train 0.00049  val 0.00049  (1.5 s)
+epoch  43/120  train 0.00049  val 0.00046  (1.5 s)  *best
+epoch  44/120  train 0.00047  val 0.00047  (1.5 s)
+epoch  45/120  train 0.00047  val 0.00050  (1.4 s)
+epoch  46/120  train 0.00047  val 0.00055  (1.5 s)
+epoch  47/120  train 0.00047  val 0.00048  (1.5 s)
+epoch  48/120  train 0.00045  val 0.00044  (1.4 s)  *best
+epoch  49/120  train 0.00045  val 0.00044  (1.5 s)  *best
+epoch  50/120  train 0.00044  val 0.00047  (1.5 s)
+epoch  51/120  train 0.00043  val 0.00042  (1.5 s)  *best
+epoch  52/120  train 0.00044  val 0.00042  (1.5 s)
+epoch  53/120  train 0.00044  val 0.00043  (1.4 s)
+epoch  54/120  train 0.00043  val 0.00042  (1.5 s)
+epoch  55/120  train 0.00043  val 0.00041  (1.5 s)  *best
+epoch  56/120  train 0.00042  val 0.00052  (1.5 s)
+epoch  57/120  train 0.00043  val 0.00044  (1.5 s)
+epoch  58/120  train 0.00043  val 0.00045  (1.4 s)
+epoch  59/120  train 0.00043  val 0.00042  (1.4 s)
+epoch  60/120  train 0.00041  val 0.00039  (1.5 s)  *best
+epoch  61/120  train 0.00041  val 0.00039  (1.5 s)  *best
+epoch  62/120  train 0.00039  val 0.00037  (1.4 s)  *best
+epoch  63/120  train 0.00039  val 0.00038  (1.5 s)
+epoch  64/120  train 0.00039  val 0.00038  (1.5 s)
+epoch  65/120  train 0.00039  val 0.00037  (1.4 s)  *best
+epoch  66/120  train 0.00039  val 0.00039  (1.4 s)
+epoch  67/120  train 0.00038  val 0.00036  (1.4 s)  *best
+epoch  68/120  train 0.00037  val 0.00036  (1.4 s)  *best
+epoch  69/120  train 0.00037  val 0.00035  (1.5 s)  *best
+epoch  70/120  train 0.00037  val 0.00035  (1.5 s)
+epoch  71/120  train 0.00036  val 0.00035  (1.5 s)
+epoch  72/120  train 0.00037  val 0.00038  (1.5 s)
+epoch  73/120  train 0.00036  val 0.00033  (1.5 s)  *best
+epoch  74/120  train 0.00036  val 0.00041  (1.4 s)
+epoch  75/120  train 0.00039  val 0.00039  (1.4 s)
+epoch  76/120  train 0.00038  val 0.00034  (1.4 s)
+epoch  77/120  train 0.00035  val 0.00036  (1.5 s)
+epoch  78/120  train 0.00036  val 0.00036  (1.4 s)
+epoch  79/120  train 0.00034  val 0.00033  (1.5 s)  *best
+epoch  80/120  train 0.00033  val 0.00031  (1.5 s)  *best
+epoch  81/120  train 0.00037  val 0.00059  (1.4 s)
+epoch  82/120  train 0.00036  val 0.00035  (1.5 s)
+epoch  83/120  train 0.00034  val 0.00034  (1.5 s)
+epoch  84/120  train 0.00034  val 0.00035  (1.5 s)
+epoch  85/120  train 0.00034  val 0.00033  (1.5 s)
+epoch  86/120  train 0.00035  val 0.00031  (1.4 s)
+epoch  87/120  train 0.00033  val 0.00030  (1.4 s)  *best
+epoch  88/120  train 0.00034  val 0.00031  (1.5 s)
+epoch  89/120  train 0.00032  val 0.00030  (1.4 s)
+epoch  90/120  train 0.00034  val 0.00035  (1.5 s)
+epoch  91/120  train 0.00032  val 0.00031  (1.5 s)
+epoch  92/120  train 0.00033  val 0.00029  (1.5 s)  *best
+epoch  93/120  train 0.00031  val 0.00029  (1.4 s)
+epoch  94/120  train 0.00032  val 0.00033  (1.4 s)
+epoch  95/120  train 0.00032  val 0.00032  (1.5 s)
+epoch  96/120  train 0.00031  val 0.00029  (1.5 s)  *best
+epoch  97/120  train 0.00032  val 0.00031  (1.5 s)
+epoch  98/120  train 0.00031  val 0.00033  (1.4 s)
+epoch  99/120  train 0.00032  val 0.00029  (1.4 s)
+epoch 100/120  train 0.00030  val 0.00028  (1.5 s)  *best
+epoch 101/120  train 0.00031  val 0.00032  (1.5 s)
+epoch 102/120  train 0.00032  val 0.00030  (1.5 s)
+epoch 103/120  train 0.00032  val 0.00031  (1.5 s)
+epoch 104/120  train 0.00031  val 0.00031  (1.5 s)
+epoch 105/120  train 0.00031  val 0.00033  (1.5 s)
+epoch 106/120  train 0.00030  val 0.00029  (1.5 s)
+epoch 107/120  train 0.00030  val 0.00027  (1.5 s)  *best
+epoch 108/120  train 0.00031  val 0.00028  (1.5 s)
+epoch 109/120  train 0.00031  val 0.00030  (1.4 s)
+epoch 110/120  train 0.00032  val 0.00034  (1.4 s)
+epoch 111/120  train 0.00030  val 0.00027  (1.4 s)
+epoch 112/120  train 0.00029  val 0.00030  (1.5 s)
+epoch 113/120  train 0.00031  val 0.00032  (1.5 s)
+epoch 114/120  train 0.00030  val 0.00031  (1.4 s)
+epoch 115/120  train 0.00030  val 0.00031  (1.5 s)
+epoch 116/120  train 0.00030  val 0.00026  (1.5 s)  *best
+epoch 117/120  train 0.00029  val 0.00029  (1.4 s)
+epoch 118/120  train 0.00029  val 0.00026  (1.5 s)  *best
+epoch 119/120  train 0.00029  val 0.00026  (1.4 s)  *best
+epoch 120/120  train 0.00030  val 0.00029  (1.5 s)
+training time: 2.9 min
+saved D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\autoencoder_bn.pt
+epoch 1: train 0.03681 val 0.01187 | last: train 0.00030 val 0.00029 | best epoch 119: val 0.00026
+40 validation scores: min 0.00396  median 0.00576  max 0.01111
+GPU memory peak: 285 MB
+figures: D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\figures\ae_bn_loss_curve.png | D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\figures\ae_bn_val_reconstructions.png
+
+[ae_bn] D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\autoencoder_bn.pt (modified 2026-10-25 16:12)
+[pc_raw] D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\patchcore_bank.pt (modified 2026-10-25 15:55)
+[pc_bn] patchcore_bank_bn.pt missing -> building it with `python -m src.patchcore` (train/val only)
+device: cuda | layer2: (1, 512, 32, 32) | layer3: (1, 1024, 16, 16) | embedding: (1, 1536, 32, 32)
+feature extraction: 3.9 s | full bank (286720, 1536) = 1.64 GB
+coreset: 124.6 s | bank (28672, 1536) = 0.164 GB
+saved D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\patchcore_bank_bn.pt (168 MB)
+scoring 40 validation images: 3.5 s
+40 validation scores: min 1.263  median 1.429  max 1.699
+GPU memory peak: 1260 MB
+figure: D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\figures\pc_bn_val_heatmaps.png
+
+[pc_bn] D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\patchcore_bank_bn.pt (modified 2026-10-25 16:15)
+variant  T_image  T_pixel  val_min  val_median  val_max  val_heatmap_median
+ ae_raw 0.011385 0.006448 0.004130    0.006196 0.011916            0.000037
+  ae_bn 0.010449 0.005679 0.003965    0.005762 0.011109            0.000038
+ pc_raw 1.678120 1.409577 1.255971    1.427628 1.685135            1.035080
+  pc_bn 1.649288 1.399795 1.262918    1.429341 1.699470            1.032052
+THRESHOLDS FROZEN
+
+== PHASE B: test set ==
+loaded 160 test images
+[ae_raw] scored the test set in 0.7 s
+[ae_bn] scored the test set in 0.5 s
+[pc_raw] scored the test set in 14.2 s
+[pc_bn] scored the test set in 14.0 s
+
+== PHASE C: report ==
+== SUMMARY (test set, thresholds from validation) ==
+variant  T_image  auroc  precision  recall    f1  false_reject_rate  missed_defect_rate  TN  FP  FN  TP  pixel_auroc   iou  dice
+ ae_raw    0.011  0.752      1.000   0.034 0.065              0.000               0.966  41   0 115   4        0.969 0.040 0.062
+  ae_bn    0.010  0.708      1.000   0.050 0.096              0.000               0.950  41   0 113   6        0.970 0.032 0.050
+ pc_raw    1.678  0.947      0.989   0.748 0.852              0.024               0.252  40   1  30  89        0.990 0.141 0.235
+  pc_bn    1.649  0.944      0.978   0.756 0.853              0.049               0.244  39   2  29  90        0.990 0.132 0.224
+
+recall per defect type:
+variant            ae_raw  ae_bn  pc_raw  pc_bn
+defect                                         
+manipulated_front   0.042  0.042   0.583  0.625
+scratch_head        0.000  0.000   0.667  0.708
+scratch_neck        0.040  0.080   1.000  0.960
+thread_side         0.043  0.043   0.565  0.565
+thread_top          0.043  0.087   0.913  0.913
+
+AUROC per defect type (vs test good):
+variant            ae_raw  ae_bn  pc_raw  pc_bn
+defect                                         
+manipulated_front   0.682  0.592   0.888  0.893
+scratch_head        0.769  0.723   0.965  0.948
+scratch_neck        0.675  0.641   0.998  0.996
+thread_side         0.762  0.717   0.885  0.898
+thread_top          0.878  0.875   0.994  0.982
+
+robustness: test_auroc
+variant           ae_raw  ae_bn  pc_raw  pc_bn
+perturbation                                  
+clean              0.752  0.708   0.947  0.944
+brightness_minus   0.706  0.707   0.941  0.944
+brightness_plus    0.826  0.707   0.951  0.944
+contrast_low       0.789  0.668   0.943  0.932
+contrast_high      0.734  0.724   0.928  0.962
+rotate_10          0.725  0.656   0.725  0.668
+noise              0.752  0.714   0.804  0.801
+
+robustness: test_frr
+variant           ae_raw  ae_bn  pc_raw  pc_bn
+perturbation                                  
+clean              0.000  0.000   0.024  0.049
+brightness_minus   0.049  0.000   0.024  0.049
+brightness_plus    0.000  0.000   0.024  0.049
+contrast_low       0.000  0.000   0.024  0.122
+contrast_high      0.073  0.024   0.171  0.098
+rotate_10          0.000  0.000   1.000  1.000
+noise              0.000  0.000   1.000  1.000
+
+robustness: val_frr
+variant           ae_raw  ae_bn  pc_raw  pc_bn
+perturbation                                  
+clean              0.025  0.025   0.025  0.025
+brightness_minus   0.025  0.025   0.025  0.025
+brightness_plus    0.050  0.025   0.025  0.025
+contrast_low       0.000  0.000   0.025  0.025
+contrast_high      0.150  0.125   0.050  0.125
+rotate_10          0.000  0.000   1.000  1.000
+noise              0.025  0.025   1.000  1.000
+
+robustness: val_mean_rel_change
+variant           ae_raw  ae_bn  pc_raw  pc_bn
+perturbation                                  
+clean              0.000  0.000   0.000  0.000
+brightness_minus  -0.015  0.000   0.009 -0.000
+brightness_plus    0.062 -0.000   0.004  0.000
+contrast_low      -0.322 -0.337   0.019  0.018
+contrast_high      0.424  0.418   0.055  0.062
+rotate_10         -0.156 -0.183   0.723  0.737
+noise              0.055  0.062   0.419  0.425
+
+total time: 10.3 min
