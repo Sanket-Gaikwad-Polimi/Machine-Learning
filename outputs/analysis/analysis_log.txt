@@ -1,0 +1,82 @@
+analysis.py started 2026-11-12 23:54 | post-hoc analysis of frozen v1 results
+hashed 51 v1 files in outputs/results, outputs/figures, outputs/checkpoints
+self-check: AUROC, recall, false-reject rate and IoU recomputed = metrics.csv (all 4 variants)
+
+== 1. LOCALISATION (heat-map maximum within 8 px of the defect, 256 px) ==
+variant            ae_raw  ae_bn  pc_raw  pc_bn
+group                                          
+manipulated_front   0.375  0.292   0.875  0.833
+scratch_head        0.292  0.292   0.750  0.750
+scratch_neck        0.280  0.120   1.000  0.960
+thread_side         0.087  0.087   0.565  0.478
+thread_top          0.609  0.522   0.826  0.913
+all defective       0.328  0.261   0.807  0.790
+detected (TP)       0.250  0.167   0.831  0.822
+
+hits / n:
+variant            ae_raw   ae_bn  pc_raw   pc_bn
+group                                            
+manipulated_front    9/24    7/24   21/24   20/24
+scratch_head         7/24    7/24   18/24   18/24
+scratch_neck         7/25    3/25   25/25   24/25
+thread_side          2/23    2/23   13/23   11/23
+thread_top          14/23   12/23   19/23   21/23
+all defective      39/119  31/119  96/119  94/119
+detected (TP)         1/4     1/6   74/89   74/90
+
+median distance (px at 256) and chance level (all defective):
+         median_distance_px  chance_hit_rate
+variant                                     
+ae_raw               29.614            0.014
+ae_bn                39.051            0.014
+pc_raw                0.000            0.014
+pc_bn                 0.000            0.014
+
+== 2. THRESHOLD TRADE-OFF (hypothetical: the official T stays) ==
+recall at a test false-reject rate of at most ...
+variant     ae_raw  ae_bn  pc_raw  pc_bn
+target_frr                              
+0.000        0.034  0.126   0.588  0.555
+0.025        0.101  0.227   0.790  0.731
+0.050        0.151  0.353   0.798  0.798
+0.100        0.513  0.387   0.849  0.840
+
+validation-only threshold rules (what-if on the test set):
+variant                                      rule      T  T / T_official  val_above_T  test_frr  test_recall  test_detected
+ ae_raw frozen: 99th percentile of val (official) 0.0114          1.0000            1    0.0000       0.0336              4
+ ae_raw                                max of val 0.0119          1.0466            0    0.0000       0.0252              3
+ ae_raw                 val mean + 3 std (ddof 1) 0.0118          1.0358            1    0.0000       0.0336              4
+  ae_bn frozen: 99th percentile of val (official) 0.0104          1.0000            1    0.0000       0.0504              6
+  ae_bn                                max of val 0.0111          1.0631            0    0.0000       0.0336              4
+  ae_bn                 val mean + 3 std (ddof 1) 0.0105          1.0058            1    0.0000       0.0420              5
+ pc_raw frozen: 99th percentile of val (official) 1.6781          1.0000            1    0.0244       0.7479             89
+ pc_raw                                max of val 1.6851          1.0042            0    0.0244       0.7311             87
+ pc_raw                 val mean + 3 std (ddof 1) 1.7107          1.0194            0    0.0244       0.6555             78
+  pc_bn frozen: 99th percentile of val (official) 1.6493          1.0000            1    0.0488       0.7563             90
+  pc_bn                                max of val 1.6995          1.0304            0    0.0244       0.6891             82
+  pc_bn                 val mean + 3 std (ddof 1) 1.6973          1.0291            1    0.0244       0.6891             82
+
+== 3. UNCERTAINTY (bootstrap, 2000 stratified paired resamples, seed 42) ==
+variant            metric  estimate  ci95_low  ci95_high
+ ae_raw             auroc     0.752     0.659      0.833
+ ae_raw            recall     0.034     0.008      0.067
+ ae_raw false_reject_rate     0.000     0.000      0.000
+ ae_raw               iou     0.040     0.023      0.059
+  ae_bn             auroc     0.708     0.619      0.787
+  ae_bn            recall     0.050     0.017      0.092
+  ae_bn false_reject_rate     0.000     0.000      0.000
+  ae_bn               iou     0.032     0.017      0.050
+ pc_raw             auroc     0.947     0.910      0.976
+ pc_raw            recall     0.748     0.672      0.824
+ pc_raw false_reject_rate     0.024     0.000      0.073
+ pc_raw               iou     0.141     0.124      0.158
+  pc_bn             auroc     0.944     0.907      0.974
+  pc_bn            recall     0.756     0.672      0.832
+  pc_bn false_reject_rate     0.049     0.000      0.122
+  pc_bn               iou     0.132     0.117      0.148
+
+           difference  estimate  ci95_low  ci95_high  share_of_resamples_le_0  n_resamples
+AUROC pc_raw - ae_raw    0.1951    0.1016     0.2986                      0.0         2000
+
+v1 untouched: all 51 files in outputs/results, outputs/figures and outputs/checkpoints have identical sha256 before and after
+run time: 19 s

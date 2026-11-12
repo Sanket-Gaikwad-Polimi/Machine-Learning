@@ -1,0 +1,3 @@
+# post-hoc analysis of frozen v1 results
+difference,estimate,ci95_low,ci95_high,share_of_resamples_le_0,n_resamples
+AUROC pc_raw - ae_raw,0.19512195121951215,0.10163968026234882,0.2986318917811028,0.0,2000
