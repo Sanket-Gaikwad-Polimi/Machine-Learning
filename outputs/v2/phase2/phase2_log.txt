@@ -1,0 +1,92 @@
+phase2.py started 2026-11-13 00:27 | synthetic defects on validation images
+hashed 62 files in outputs/results, figures, checkpoints, analysis
+40 validation images; 1024 -> 256 pipeline identical to data.load_images
+generated 160 synthetic images in 26 s
+             area_pct               max_change               mean_change_in_mask               draws            changed_px_outside           
+                  min median    max        min median    max                 min median    max   min median max                min median max
+type                                                                                                                                         
+scratch         0.101  0.167  0.293      0.035  0.075  0.129               0.016  0.035  0.059     1    2.0  12                  0    0.0   0
+spot            0.107  0.320  0.595      0.082  0.145  0.192               0.044  0.081  0.119     1    1.0   2                  0    0.0   0
+cutpaste        0.122  0.300  0.696      0.122  0.312  0.498               0.052  0.099  0.189     1    1.0   3                  0    0.0   0
+thread_smear    0.128  0.333  0.604      0.035  0.067  0.165               0.007  0.014  0.028     1    1.0   1                  0    0.0   0
+saved synthetic_examples.png
+[ae_raw] good val scores vs ae_raw_val_scores.csv: max abs diff 4.05e-10 | good above T: 1/40
+[ae_bn] good val scores vs ae_bn_val_scores.csv: max abs diff 4.29e-10 | good above T: 1/40
+[pc_raw] good val scores vs pc_raw_val_scores.csv: max abs diff 4.93e-08 | good above T: 1/40
+[pc_bn] good val scores vs pc_bn_val_scores.csv: max abs diff 4.99e-08 | good above T: 1/40
+
+auroc:
+variant        ae_raw  ae_bn  pc_raw  pc_bn
+group                                      
+scratch         0.503  0.502   0.626  0.645
+spot            0.541  0.522   0.688  0.681
+cutpaste        0.556  0.544   0.960  0.942
+thread_smear    0.480  0.473   0.544  0.534
+all synthetic   0.520  0.510   0.705  0.700
+
+recall:
+variant        ae_raw  ae_bn  pc_raw  pc_bn
+group                                      
+scratch         0.025  0.025   0.150  0.125
+spot            0.025  0.025   0.100  0.150
+cutpaste        0.050  0.050   0.600  0.650
+thread_smear    0.000  0.000   0.025  0.025
+all synthetic   0.025  0.025   0.219  0.238
+
+pixel_auroc:
+variant        ae_raw  ae_bn  pc_raw  pc_bn
+group                                      
+scratch         0.958  0.958   0.892  0.894
+spot            0.951  0.949   0.936  0.943
+cutpaste        0.967  0.970   0.992  0.993
+thread_smear    0.943  0.944   0.877  0.881
+all synthetic   0.954  0.955   0.926  0.930
+
+iou:
+variant        ae_raw  ae_bn  pc_raw  pc_bn
+group                                      
+scratch         0.008  0.008   0.033  0.033
+spot            0.031  0.019   0.089  0.116
+cutpaste        0.051  0.049   0.217  0.212
+thread_smear    0.001  0.002   0.025  0.018
+all synthetic   0.023  0.019   0.091  0.095
+
+dice:
+variant        ae_raw  ae_bn  pc_raw  pc_bn
+group                                      
+scratch         0.015  0.015   0.056  0.057
+spot            0.050  0.033   0.134  0.166
+cutpaste        0.084  0.080   0.334  0.325
+thread_smear    0.003  0.003   0.038  0.029
+all synthetic   0.038  0.033   0.140  0.144
+
+hit_rate:
+variant        ae_raw  ae_bn  pc_raw  pc_bn
+group                                      
+scratch         0.175  0.150   0.375  0.350
+spot            0.175  0.200   0.550  0.550
+cutpaste        0.300  0.225   0.850  0.825
+thread_smear    0.100  0.100   0.200  0.200
+all synthetic   0.188  0.169   0.494  0.481
+
+median_distance_px:
+variant        ae_raw   ae_bn  pc_raw   pc_bn
+group                                        
+scratch        63.285  63.536  31.678  18.516
+spot           60.877  43.963   4.303   4.303
+cutpaste       52.934  93.263   0.000   0.000
+thread_smear   42.320  39.484  90.181  95.597
+all synthetic  57.645  61.270   8.531   9.217
+
+chance hit rate (random peak): {'scratch': 0.014, 'spot': 0.012, 'cutpaste': 0.013, 'thread_smear': 0.013, 'all synthetic': 0.013}
+
+observation only (not a target): real test set vs all synthetic
+         real AUROC  synthetic AUROC  real recall  synthetic recall
+variant                                                            
+ae_raw        0.752            0.520        0.034             0.025
+ae_bn         0.708            0.510        0.050             0.025
+pc_raw        0.947            0.705        0.748             0.219
+pc_bn         0.944            0.700        0.756             0.238
+
+v1 untouched: all 62 files have identical sha256 before and after
+run time: 99 s
