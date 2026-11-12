@@ -1,0 +1,15 @@
+phase2.py --examples started 2026-11-13 00:11 | synthetic defects on validation images
+hashed 62 files in outputs/results, figures, checkpoints, analysis
+40 validation images; 1024 -> 256 pipeline identical to data.load_images
+generated 160 synthetic images in 26 s
+             area_pct               max_change               mean_change_in_mask               draws            changed_px_outside           
+                  min median    max        min median    max                 min median    max   min median max                min median max
+type                                                                                                                                         
+scratch         0.101  0.167  0.293      0.035  0.075  0.129               0.016  0.035  0.059     1    2.0  12                  0    0.0   0
+spot            0.107  0.320  0.595      0.082  0.145  0.192               0.044  0.081  0.119     1    1.0   2                  0    0.0   0
+cutpaste        0.122  0.300  0.696      0.122  0.312  0.498               0.052  0.099  0.189     1    1.0   3                  0    0.0   0
+thread_smear    0.128  0.333  0.604      0.035  0.067  0.165               0.007  0.014  0.028     1    1.0   1                  0    0.0   0
+saved synthetic_examples.png
+
+v1 untouched: all 62 files have identical sha256 before and after
+run time: 29 s
