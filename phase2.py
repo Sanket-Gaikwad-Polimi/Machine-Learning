@@ -136,9 +136,10 @@ def plot_baseline(res, path):
         ax.set_ylim(0, 1.05)
         ax.set_title(lab, fontsize=9)
         ax.grid(axis="y", alpha=0.3)
-    axes[0].legend(fontsize=8, loc="lower left")
+    handles, labels = axes[0].get_legend_handles_labels()       # one legend below the panels,
+    fig.legend(handles, labels, loc="lower center", ncol=len(VARIANTS), fontsize=8, frameon=False)
     fig.suptitle(f"Baseline: frozen v1 models and thresholds | {LABEL}", fontsize=10)
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0.06, 1, 1])                      # so it covers no bar
     fig.savefig(path, dpi=100)
     plt.close(fig)
 

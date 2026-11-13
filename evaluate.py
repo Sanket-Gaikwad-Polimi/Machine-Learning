@@ -34,6 +34,10 @@ Safe re-run (the official files are never touched): python evaluate.py --out-dir
   saved in <out-dir>/checkpoints. The folder must not be (or contain, or be inside) an
   official folder; a folder that already holds a finished run is refused.
   python evaluate.py --report-only --out-dir outputs/rerun redoes Phase C of that folder.
+
+v2: --category screw (default) uses exactly the v1 folders and files. Another category
+(e.g. --category transistor) reads its own data folder and writes to outputs/<category>/results,
+outputs/<category>/figures and outputs/checkpoints/<category>, so it never touches a v1 file.
 """
 import argparse
 import gc
@@ -49,7 +53,8 @@ import torch
 from scipy.ndimage import rotate as nd_rotate
 
 from src.autoencoder import AutoencoderDetector
-from src.data import DEFECT_TYPES, get_split, list_test, load_images, load_mask
+from src.categories import get_category
+from src.data import get_split, list_test, load_images, load_mask, to_display
 from src.metrics import (Q_IMAGE, Q_PIXEL, image_metrics, per_defect_table, pixel_metrics,
                          plot_roc, threshold_from_val)
 from src.patchcore import PatchCoreDetector
@@ -65,19 +70,24 @@ VARIANTS = {
 
 # Where this run writes: the official folders, unless --out-dir moves all three
 # into one separate folder (OUT_DIR), so a re-run never touches the official files.
+# CATEGORY (v2): screw = the v1 folders; another category uses its own folders (src/categories.py).
+CATEGORY = "screw"
+CKPT_DIR = CHECKPOINTS                 # where the category's official models live
 OUT_DIR = None
 RES_DIR, FIG_DIR, HEAT_DIR = RESULTS, FIGURES, CHECKPOINTS
 
 
 # ---- perturbations (fixed a priori, see docstring) -------------------------------
+# Each perturbation works per image over all its axes (greyscale N x H x W as in v1;
+# colour N x 3 x H x W: the same operation on every channel, rotation in the image plane).
 def _contrast(x, k):
-    m = x.mean(axis=(1, 2), keepdims=True)
+    m = x.mean(axis=tuple(range(1, x.ndim)), keepdims=True)
     return np.clip(m + k * (x - m), 0, 1)
 
 
 def _rotate10(x):
-    return np.stack([nd_rotate(img, 10, reshape=False, order=1, mode="constant",
-                               cval=float(np.median(img))) for img in x]).astype(np.float32)
+    return np.stack([nd_rotate(img, 10, axes=(img.ndim - 1, img.ndim - 2), reshape=False, order=1,
+                               mode="constant", cval=float(np.median(img))) for img in x]).astype(np.float32)
 
 
 def _noise(x):
@@ -113,7 +123,7 @@ class _Tee:
 
 def _model_path(name):
     """The official checkpoint; in an --out-dir run, a missing one lives in <out-dir>/checkpoints."""
-    official = CHECKPOINTS / VARIANTS[name][1]
+    official = CKPT_DIR / VARIANTS[name][1]
     return official if official.exists() or OUT_DIR is None else HEAT_DIR / official.name
 
 
@@ -121,6 +131,7 @@ def _load(name):
     cls, file, _, bn = VARIANTS[name]
     det = cls.load(_model_path(name))
     assert det.config["normalize_brightness"] == bn, f"{file}: wrong normalize_brightness"
+    assert det.config["category"] == CATEGORY, f"{file}: category {det.config['category']}, not {CATEGORY}"
     return det
 
 
@@ -136,37 +147,38 @@ def _build(name, path):
     (python -m src.autoencoder / src.patchcore) does, but save it only to `path`
     (the module would also write its figures and history into outputs/)."""
     cls, _, _, bn = VARIANTS[name]
-    split = get_split()
-    train = load_images(split["train"])
+    split = get_split(CATEGORY)
+    train = load_images(split["train"], category=CATEGORY)
     if cls is AutoencoderDetector:
-        val = load_images(split["val"])
+        val = load_images(split["val"], category=CATEGORY)
         try:
-            det = cls(normalize_brightness=bn).fit(train, val)
+            det = cls(normalize_brightness=bn, category=CATEGORY).fit(train, val)
         except torch.cuda.OutOfMemoryError:                  # same fallback as src/autoencoder.py
             torch.cuda.empty_cache()
             print("out of GPU memory, retrying with batch size 4")
-            det = cls(normalize_brightness=bn, batch_size=4).fit(train, val)
+            det = cls(normalize_brightness=bn, batch_size=4, category=CATEGORY).fit(train, val)
     else:
-        det = cls(normalize_brightness=bn).fit(train)
+        det = cls(normalize_brightness=bn, category=CATEGORY).fit(train)
     det.save(path)
     _free(det)
 
 
 # ---- Phase A: validation only -----------------------------------------------------
 def phase_a():
-    split = get_split()
-    val_files, val_images = split["val"], load_images(split["val"])
+    split = get_split(CATEGORY)
+    val_files, val_images = split["val"], load_images(split["val"], category=CATEGORY)
     val_pert = {p: f(val_images) for p, f in PERTURBATIONS.items()}
     frozen, val_rob = [], {}
     for name, (_, file, module, bn) in VARIANTS.items():
         path = _model_path(name)
         if not path.exists() and OUT_DIR is not None:
-            print(f"[{name}] {file} missing in {CHECKPOINTS} -> building it (train/val only), "
+            print(f"[{name}] {file} missing in {CKPT_DIR} -> building it (train/val only), "
                   f"saved only to {path}")
             _build(name, path)
         elif not path.exists():
             print(f"[{name}] {file} missing -> building it with `python -m {module}` (train/val only)")
-            r = subprocess.run([sys.executable, "-m", module] + (["--normalize-brightness"] if bn else []),
+            r = subprocess.run([sys.executable, "-m", module] + (["--normalize-brightness"] if bn else [])
+                               + ([] if CATEGORY == "screw" else ["--category", CATEGORY]),
                                cwd=ROOT, capture_output=True, text=True)
             print(r.stdout)
             if r.returncode:
@@ -191,10 +203,10 @@ def phase_a():
 
 # ---- Phase B: the only place test images are scored ------------------------------
 def phase_b(th, val_rob):
-    test = list_test()
+    test = list_test(CATEGORY)
     files = [t["file"] for t in test]
     labels = np.array([t["label"] for t in test])
-    images = load_images(files)
+    images = load_images(files, category=CATEGORY)
     test_pert = {p: f(images) for p, f in PERTURBATIONS.items()}
     print(f"loaded {len(files)} test images")
     rows = []
@@ -230,7 +242,7 @@ def _examples(df, T):
     fp, fn = good[good.score > T], bad[bad.score <= T]
     rows = [("false positive", fp.score.idxmax()) if len(fp) else ("no FP", good.score.idxmax()),
             ("missed defect", fn.score.idxmin()) if len(fn) else ("no FN", bad.score.idxmin())]
-    for d in DEFECT_TYPES:
+    for d in get_category(CATEGORY)["defect_types"]:
         tp = df[(df.defect == d) & (df.score > T)].sort_values("score")
         rows.append((f"TP {d} (median)", tp.index[len(tp) // 2]) if len(tp)
                     else (f"{d}: missed", df[df.defect == d].score.idxmax()))
@@ -245,16 +257,16 @@ def _plot_examples(name, df, maps, images, masks, t):
     fig, axes = plt.subplots(len(rows), 4, figsize=(12, 3.1 * len(rows)))
     for ax, (title, i) in zip(axes, rows):
         decision = "defective" if df.score[i] > t.T_image else "good"
-        ax[0].imshow(images[i], cmap="gray", vmin=0, vmax=1)
+        ax[0].imshow(to_display(images[i]), cmap="gray", vmin=0, vmax=1)
         ax[0].set_title(f"{title}\n{df.file[i]}\nscore {df.score[i]:.4g}, T {t.T_image:.4g} -> {decision}",
                         fontsize=8)
         ax[1].imshow(maps[i], cmap="jet", vmin=vmin, vmax=vmax)
         ax[1].set_title("heat-map", fontsize=8)
         pred = maps[i] > t.T_pixel
-        ax[2].imshow(images[i], cmap="gray", vmin=0, vmax=1)
+        ax[2].imshow(to_display(images[i]), cmap="gray", vmin=0, vmax=1)
         ax[2].imshow(np.ma.masked_where(~pred, pred), cmap="autumn", alpha=0.6)
         ax[2].set_title("predicted region (heat-map > T_pixel)", fontsize=8)
-        ax[3].imshow(images[i], cmap="gray", vmin=0, vmax=1)
+        ax[3].imshow(to_display(images[i]), cmap="gray", vmin=0, vmax=1)
         ax[3].imshow(np.ma.masked_where(masks[i] == 0, masks[i]), cmap="winter", alpha=0.6)
         ax[3].set_title("GT mask", fontsize=8)
     for a in axes.flat:
@@ -268,11 +280,12 @@ def _plot_examples(name, df, maps, images, masks, t):
 def phase_c():
     import matplotlib.pyplot as plt
     th = pd.read_csv(RES_DIR / "thresholds.csv").set_index("variant")
-    test = list_test()
+    defect_types = get_category(CATEGORY)["defect_types"]
+    test = list_test(CATEGORY)
     files = [t["file"] for t in test]
     labels = np.array([t["label"] for t in test])
-    images = load_images(files)
-    masks = np.stack([load_mask(t["mask"]) for t in test])
+    images = load_images(files, category=CATEGORY)
+    masks = np.stack([load_mask(t["mask"], category=CATEGORY) for t in test])
     results = {}
     for name in VARIANTS:
         df = pd.read_csv(RES_DIR / f"{name}_scores.csv")
@@ -288,7 +301,7 @@ def phase_c():
         row.pop("T"), row.pop("T_pix")
         metric_rows.append({**row, "T_image": t.T_image, "T_pixel": t.T_pixel})
         table = per_defect_table(df, t.T_image).assign(variant=name, iou=np.nan, dice=np.nan)
-        for d in DEFECT_TYPES:
+        for d in defect_types:
             idx = (df.defect == d).to_numpy()
             px = pixel_metrics(masks[idx], maps[idx], t.T_pixel)
             table.loc[table.defect == d, "iou"] = px["iou"]
@@ -309,9 +322,9 @@ def phase_c():
         val = pd.read_csv(RES_DIR / f"{name}_val_scores.csv").score
         allv = np.r_[df.score, val]
         bins = np.linspace(allv.min(), allv.max(), 40)
-        ax.hist(df.score[df.label == 0], bins=bins, alpha=0.6, label="test good (41)")
-        ax.hist(df.score[df.label == 1], bins=bins, alpha=0.6, label="test defective (119)")
-        ax.hist(val, bins=bins, histtype="step", color="k", label="validation good (40)")
+        ax.hist(df.score[df.label == 0], bins=bins, alpha=0.6, label=f"test good ({(df.label == 0).sum()})")
+        ax.hist(df.score[df.label == 1], bins=bins, alpha=0.6, label=f"test defective ({(df.label == 1).sum()})")
+        ax.hist(val, bins=bins, histtype="step", color="k", label=f"validation good ({len(val)})")
         ax.axvline(th.loc[name, "T_image"], color="r", ls="--", label="T_image")
         ax.set_title(name)
         ax.set_xlabel("anomaly score")
@@ -327,12 +340,12 @@ def phase_c():
 
     # 12. score vs defect area
     bad = [i for i, t in enumerate(test) if t["label"] == 1]
-    area = np.array([100 * load_mask(test[i]["mask"], size=1024).mean() for i in bad])
+    area = np.array([100 * load_mask(test[i]["mask"], size=1024, category=CATEGORY).mean() for i in bad])
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
     for ax, name in zip(axes, ("ae_raw", "pc_raw")):
         df = results[name][0]
         rel = df.score.to_numpy()[bad] / th.loc[name, "T_image"]
-        for d in DEFECT_TYPES:
+        for d in defect_types:
             sel = np.array([test[i]["defect"] == d for i in bad])
             ax.scatter(area[sel], rel[sel], s=18, label=d)
         ax.axhline(1, color="k", ls="--", lw=1)
@@ -368,7 +381,7 @@ def phase_c():
 def _check_out_dir(out):
     """--out-dir must be a separate folder: not an official folder or the dataset, not inside
     one of them, and not a folder that contains them (such as outputs/ or the project root)."""
-    for p in (RESULTS, FIGURES, CHECKPOINTS, DATA_DIR):
+    for p in (RESULTS, FIGURES, CHECKPOINTS, DATA_DIR, RES_DIR, FIG_DIR, HEAT_DIR, get_category(CATEGORY)["data"]):
         p = p.resolve()
         if out == p or p in out.parents or out in p.parents:
             sys.exit(f"--out-dir {out} is not allowed: it overlaps {p}. Use a new folder, e.g. outputs/rerun")
@@ -380,9 +393,14 @@ if __name__ == "__main__":
                         help="only redo Phase C (tables and figures) from the saved scores")
     parser.add_argument("--out-dir", help="safe re-run: write every output into this folder, e.g. "
                                           "outputs/rerun (the official files are never touched)")
+    parser.add_argument("--category", default="screw", help="MVTec category (default screw = v1 folders)")
     args = parser.parse_args()
 
     # every check comes BEFORE any file is opened, so a refused run changes nothing
+    CATEGORY = args.category
+    cat = get_category(CATEGORY)
+    CKPT_DIR = cat["checkpoints"]
+    RES_DIR, FIG_DIR, HEAT_DIR = cat["results"], cat["figures"], cat["checkpoints"]
     if args.out_dir:
         OUT_DIR = Path(args.out_dir)
         OUT_DIR = (OUT_DIR if OUT_DIR.is_absolute() else ROOT / OUT_DIR).resolve()
@@ -400,7 +418,7 @@ if __name__ == "__main__":
                      "or --out-dir outputs/rerun for a separate re-run.")
         sys.exit(f"{OUT_DIR} already holds a finished run: delete it or choose a new folder, e.g. outputs/rerun2")
 
-    if OUT_DIR is not None:
+    if OUT_DIR is not None or CATEGORY != "screw":
         for d in (RES_DIR, FIG_DIR, HEAT_DIR):
             d.mkdir(parents=True, exist_ok=True)
     if OUT_DIR is not None or not args.report_only:
@@ -410,6 +428,7 @@ if __name__ == "__main__":
     t0 = time.time()
     print(f"evaluate.py started {datetime.now():%Y-%m-%d %H:%M}"
           + (" (report only)" if args.report_only else "")
+          + ("" if CATEGORY == "screw" else f" | category {CATEGORY}")
           + (f" | out-dir {OUT_DIR}" if OUT_DIR is not None else ""))
     if OUT_DIR is not None and not (OUT_DIR.parent == OUTPUTS.resolve() and OUT_DIR.name.startswith("rerun")):
         print(f"note: git only ignores outputs/rerun*/, not {OUT_DIR}: never commit it")

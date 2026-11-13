@@ -28,7 +28,11 @@ Shared interface (same as AutoencoderDetector):
   score, heatmap = det.predict(image); scores, heatmaps = det.predict_many(images)
   det.save(path); det = PatchCoreDetector.load(path)
 
-Run: python -m src.patchcore [--rebuild] [--normalize-brightness]
+v2: category="screw" (default, identical to v1) or another category from
+src/categories.py. Greyscale images are repeated to 3 channels exactly as in v1;
+colour images (3 x H x W) keep their 3 channels, with the same ImageNet normalisation.
+
+Run: python -m src.patchcore [--rebuild] [--normalize-brightness] [--category screw]
 """
 import argparse
 import random
@@ -41,8 +45,9 @@ from scipy.ndimage import gaussian_filter
 from torchvision.models import wide_resnet50_2
 from tqdm import tqdm
 
-from src.data import IMG_SIZE, SEED, get_split, load_images, shift_brightness, to_tensor
-from src.paths import CHECKPOINTS, FIGURES
+from src.categories import get_category
+from src.data import IMG_SIZE, SEED, get_split, load_images, shift_brightness, to_display, to_tensor
+from src.paths import CHECKPOINTS
 
 SMOOTH_SIGMA = 4
 EMB_DIM = 512 + 1024        # layer2 + layer3 channels
@@ -58,9 +63,10 @@ def _set_seed(seed):
 
 class PatchCoreDetector:
     def __init__(self, size=IMG_SIZE, normalize_brightness=False, coreset_ratio=0.10,
-                 proj_dim=128, seed=SEED, device=None):
+                 proj_dim=128, seed=SEED, category="screw", device=None):
         self.config = dict(size=size, normalize_brightness=normalize_brightness,
-                           coreset_ratio=coreset_ratio, proj_dim=proj_dim, seed=seed)
+                           coreset_ratio=coreset_ratio, proj_dim=proj_dim, seed=seed, category=category)
+        self.color = get_category(category)["channels"] == 3
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         _set_seed(seed)
         self.backbone = wide_resnet50_2(weights="IMAGENET1K_V1").eval().requires_grad_(False)
@@ -71,12 +77,12 @@ class PatchCoreDetector:
     # ---- features ---------------------------------------------------------
     @torch.inference_mode()
     def _embed(self, images):
-        """numpy B x H x W in [0, 1] -> patch features B x 1536 x 32 x 32 (CPU)."""
+        """numpy B x H x W (colour: B x 3 x H x W) in [0, 1] -> patch features B x 1536 x 32 x 32 (CPU)."""
         x = np.asarray(images, dtype=np.float32)
         if self.config["normalize_brightness"]:
-            x = shift_brightness(x)
+            x = shift_brightness(x, self.config["category"])
         b = self.backbone
-        t = to_tensor(x, imagenet=True).to(self.device)
+        t = to_tensor(x, imagenet=True, color=self.color).to(self.device)
         t = b.maxpool(b.relu(b.bn1(b.conv1(t))))
         f2 = b.layer2(b.layer1(t))                            # B x 512 x 32 x 32
         f3 = b.layer3(f2)                                     # B x 1024 x 16 x 16
@@ -162,7 +168,7 @@ class PatchCoreDetector:
         return np.concatenate(scores), np.stack(heatmaps).astype(np.float32)
 
     def predict(self, image):
-        """One H x W image -> (score, heat-map H x W)."""
+        """One H x W (colour: 3 x H x W) image -> (score, heat-map H x W)."""
         scores, heatmaps = self.predict_many(np.asarray(image)[None])
         return float(scores[0]), heatmaps[0]
 
@@ -185,11 +191,11 @@ def _save_figure(det, val_files, val_images, path, n=5):
     vmax = float(maps.max())
     fig, axes = plt.subplots(n, 3, figsize=(10, 3 * n))
     for row, f, img, s, m in zip(axes, val_files, val_images, scores, maps):
-        row[0].imshow(img, cmap="gray", vmin=0, vmax=1)
+        row[0].imshow(to_display(img), cmap="gray", vmin=0, vmax=1)
         row[0].set_title(f"original {f.split('/')[-1]}", fontsize=9)
         im = row[1].imshow(m, cmap="jet", vmin=0, vmax=vmax)
         row[1].set_title(f"heat-map, score {s:.3f}", fontsize=9)
-        row[2].imshow(img, cmap="gray", vmin=0, vmax=1)
+        row[2].imshow(to_display(img), cmap="gray", vmin=0, vmax=1)
         row[2].imshow(m, cmap="jet", vmin=0, vmax=vmax, alpha=0.4)
         row[2].set_title("overlay", fontsize=9)
     for ax in axes.flat:
@@ -203,35 +209,40 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build or load the PatchCore bank (no test images used).")
     parser.add_argument("--rebuild", action="store_true", help="rebuild even if a saved bank exists")
     parser.add_argument("--normalize-brightness", action="store_true")
+    parser.add_argument("--category", default="screw", help="MVTec category (default screw = v1)")
     args = parser.parse_args()
 
+    cat = get_category(args.category)
+    for d in (cat["figures"], cat["checkpoints"]):
+        d.mkdir(parents=True, exist_ok=True)
     tag = "pc_bn" if args.normalize_brightness else "pc"      # bn = brightness-normalised
-    ckpt = CHECKPOINTS / ("patchcore_bank_bn.pt" if args.normalize_brightness else "patchcore_bank.pt")
-    split = get_split()
-    val_images = load_images(split["val"])
+    ckpt = cat["checkpoints"] / ("patchcore_bank_bn.pt" if args.normalize_brightness else "patchcore_bank.pt")
+    split = get_split(args.category)
+    val_images = load_images(split["val"], category=args.category)
 
     if ckpt.exists() and not args.rebuild:
         det = PatchCoreDetector.load(ckpt)
         print("loaded", ckpt, "| bank", tuple(det.bank.shape))
     else:
-        det = PatchCoreDetector(normalize_brightness=args.normalize_brightness)
+        det = PatchCoreDetector(normalize_brightness=args.normalize_brightness, category=args.category)
         b = det.backbone
         with torch.inference_mode():                          # print the shapes once
-            t = to_tensor(val_images[:1], imagenet=True).to(det.device)
+            t = to_tensor(val_images[:1], imagenet=True, color=det.color).to(det.device)
             f2 = b.layer2(b.layer1(b.maxpool(b.relu(b.bn1(b.conv1(t))))))
             print("device:", det.device, "| layer2:", tuple(f2.shape), "| layer3:",
                   tuple(b.layer3(f2).shape), "| embedding:", tuple(det._embed(val_images[:1]).shape))
-        det.fit(load_images(split["train"]))
+        det.fit(load_images(split["train"], category=args.category))
         det.save(ckpt)
         print(f"saved {ckpt} ({ckpt.stat().st_size / 2**20:.0f} MB)")
 
+    assert det.config["category"] == args.category, f"{ckpt} belongs to {det.config['category']}"
     t0 = time.time()
     val_scores, _ = det.predict_many(val_images)
     print(f"scoring 40 validation images: {time.time() - t0:.1f} s")
     print(f"40 validation scores: min {val_scores.min():.3f}  median {np.median(val_scores):.3f}"
           f"  max {val_scores.max():.3f}")
-    _save_figure(det, split["val"], val_images, FIGURES / f"{tag}_val_heatmaps.png")
+    _save_figure(det, split["val"], val_images, cat["figures"] / f"{tag}_val_heatmaps.png")
     if torch.cuda.is_available():
         print(f"GPU memory peak: {torch.cuda.max_memory_allocated() / 2**20:.0f} MB")
         torch.cuda.empty_cache()
-    print("figure:", FIGURES / f"{tag}_val_heatmaps.png")
+    print("figure:", cat["figures"] / f"{tag}_val_heatmaps.png")

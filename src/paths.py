@@ -23,6 +23,19 @@ for folder in (FIGURES, RESULTS, CHECKPOINTS):
     folder.mkdir(parents=True, exist_ok=True)
 
 
+def category_dirs(category):
+    """Data folder and output folders of one MVTec category (v2).
+
+    screw keeps exactly the v1 folders. Any other category gets its own folders,
+    so it can never overwrite a v1 file: outputs/<category>/results, .../figures and
+    outputs/checkpoints/<category> (already git-ignored). Nothing is created here.
+    """
+    if category == "screw":
+        return {"data": DATA_DIR, "results": RESULTS, "figures": FIGURES, "checkpoints": CHECKPOINTS}
+    return {"data": ROOT / category, "results": OUTPUTS / category / "results",
+            "figures": OUTPUTS / category / "figures", "checkpoints": CHECKPOINTS / category}
+
+
 if __name__ == "__main__":
     # Quick self-check: python -m src.paths
     for name in ("ROOT", "DATA_DIR", "OUTPUTS", "FIGURES", "RESULTS", "CHECKPOINTS"):

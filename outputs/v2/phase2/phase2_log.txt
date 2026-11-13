@@ -1,4 +1,4 @@
-phase2.py started 2026-11-13 00:27 | synthetic defects on validation images
+phase2.py started 2026-11-13 00:50 | synthetic defects on validation images
 hashed 62 files in outputs/results, figures, checkpoints, analysis
 40 validation images; 1024 -> 256 pipeline identical to data.load_images
 generated 160 synthetic images in 26 s
@@ -89,4 +89,4 @@ pc_raw        0.947            0.705        0.748             0.219
 pc_bn         0.944            0.700        0.756             0.238
 
 v1 untouched: all 62 files have identical sha256 before and after
-run time: 99 s
+run time: 89 s

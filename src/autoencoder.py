@@ -22,7 +22,12 @@ Shared interface (PatchCore has the same one):
   scores, heatmaps = det.predict_many(images)    N x H x W images
   det.save(path); det = AutoencoderDetector.load(path)
 
-Run: python -m src.autoencoder [--retrain] [--normalize-brightness]
+v2: category="screw" (default, identical to v1) or another category from
+src/categories.py. in_ch = 1 (greyscale) or 3 (colour) and the augmentation
+("rot_flip" or "none") come from the category unless given; no layer is renamed,
+so the v1 checkpoints load unchanged.
+
+Run: python -m src.autoencoder [--retrain] [--normalize-brightness] [--category screw]
 """
 import argparse
 import copy
@@ -35,8 +40,9 @@ from torch import nn
 from torchvision.transforms.functional import rotate
 from scipy.ndimage import gaussian_filter
 
-from src.data import IMG_SIZE, SEED, get_split, load_images, shift_brightness
-from src.paths import CHECKPOINTS, FIGURES, RESULTS
+from src.categories import get_category
+from src.data import IMG_SIZE, SEED, get_split, load_images, shift_brightness, to_display
+from src.paths import CHECKPOINTS
 
 LATENT_CH = 32
 SMOOTH_SIGMA = 4
@@ -55,32 +61,36 @@ def _up(c_in, c_out):
 
 
 class ConvAutoencoder(nn.Module):
-    """1 x 256 x 256 -> (encoder) -> 32 x 8 x 8 -> (decoder) -> 1 x 256 x 256."""
+    """in_ch x 256 x 256 -> (encoder) -> 32 x 8 x 8 -> (decoder) -> in_ch x 256 x 256 (v1: in_ch 1)."""
 
-    def __init__(self, latent_ch=LATENT_CH):
+    def __init__(self, latent_ch=LATENT_CH, in_ch=1):
         super().__init__()
         self.encoder = nn.Sequential(                       # 256 -> 128 -> 64 -> 32 -> 16 -> 8
-            _down(1, 32), _down(32, 64), _down(64, 128), _down(128, 256), _down(256, 256),
+            _down(in_ch, 32), _down(32, 64), _down(64, 128), _down(128, 256), _down(256, 256),
             nn.Conv2d(256, latent_ch, 1))                   # bottleneck
         self.decoder = nn.Sequential(                       # 8 -> 16 -> 32 -> 64 -> 128 -> 256
             nn.Conv2d(latent_ch, 256, 1), nn.LeakyReLU(0.2),
             _up(256, 256), _up(256, 128), _up(128, 64), _up(64, 32),
-            nn.ConvTranspose2d(32, 1, 4, stride=2, padding=1),
+            nn.ConvTranspose2d(32, in_ch, 4, stride=2, padding=1),
             nn.Sigmoid())                                   # output in [0, 1]
 
     def forward(self, x):
         return self.decoder(self.encoder(x))
 
 
-def _augment(batch):
-    """Random rotation (0-360 deg) and flips; corners get the image's median grey."""
+def _augment(batch, mode="rot_flip"):
+    """mode "rot_flip" (screw, v1): random rotation (0-360 deg) and flips; corners get the
+    image's median grey (per channel for colour). mode "none" (e.g. transistor): unchanged."""
+    if mode == "none":
+        return batch
     out = []
-    for img in batch:                                       # img: 1 x H x W
+    for img in batch:                                       # img: C x H x W
         if random.random() < 0.5:
             img = img.flip(-1)
         if random.random() < 0.5:
             img = img.flip(-2)
-        out.append(rotate(img, random.uniform(0, 360), fill=[img.median().item()]))
+        fill = [img.median().item()] if len(img) == 1 else [c.median().item() for c in img]
+        out.append(rotate(img, random.uniform(0, 360), fill=fill))
     return torch.stack(out)
 
 
@@ -94,26 +104,33 @@ def _set_seed(seed):
 
 class AutoencoderDetector:
     def __init__(self, size=IMG_SIZE, normalize_brightness=False, epochs=120, batch_size=8,
-                 lr=1e-3, seed=SEED, latent_ch=LATENT_CH, device=None):
+                 lr=1e-3, seed=SEED, latent_ch=LATENT_CH, category="screw", in_ch=None, augment=None,
+                 device=None):
+        cat = get_category(category)
         self.config = dict(size=size, normalize_brightness=normalize_brightness, epochs=epochs,
-                           batch_size=batch_size, lr=lr, seed=seed, latent_ch=latent_ch)
+                           batch_size=batch_size, lr=lr, seed=seed, latent_ch=latent_ch,
+                           category=category, in_ch=in_ch or cat["channels"],
+                           augment=augment or cat["ae_augment"])
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         _set_seed(seed)
-        self.model = ConvAutoencoder(latent_ch).to(self.device)
+        self.model = ConvAutoencoder(latent_ch, self.config["in_ch"]).to(self.device)
         self.history = {"epoch": [], "train_loss": [], "val_loss": []}
         self.best_epoch = None
 
     def _prepare(self, images):
-        """numpy (N x) H x W in [0, 1] -> tensor N x 1 x H x W (brightness shift if enabled)."""
+        """numpy (N x) H x W (colour: (N x) 3 x H x W) in [0, 1] -> tensor N x C x H x W
+        (brightness shift if enabled)."""
         x = np.asarray(images, dtype=np.float32)
-        if x.ndim == 2:
+        grey = self.config["in_ch"] == 1
+        if x.ndim == (2 if grey else 3):
             x = x[None]
         if self.config["normalize_brightness"]:
-            x = shift_brightness(x)
-        return torch.from_numpy(x)[:, None]
+            x = shift_brightness(x, self.config["category"])
+        x = torch.from_numpy(x)
+        return x[:, None] if grey else x
 
     def _reconstruct(self, x):
-        """Tensor N x 1 x H x W -> reconstructions on the CPU, in small batches."""
+        """Tensor N x C x H x W -> reconstructions on the CPU, in small batches."""
         self.model.eval()
         with torch.no_grad():
             return torch.cat([self.model(b.to(self.device)).cpu()
@@ -131,7 +148,7 @@ class AutoencoderDetector:
             self.model.train()
             total = 0.0
             for idx in torch.randperm(len(x_train)).split(c["batch_size"]):
-                batch = _augment(x_train[idx].to(self.device))
+                batch = _augment(x_train[idx].to(self.device), c["augment"])
                 loss = nn.functional.mse_loss(self.model(batch), batch)
                 opt.zero_grad()
                 loss.backward()
@@ -153,20 +170,23 @@ class AutoencoderDetector:
         return self
 
     def predict_many(self, images):
-        """Scores (N,) and smoothed squared-error heat-maps (N x H x W, float32)."""
+        """Scores (N,) and smoothed squared-error heat-maps (N x H x W, float32).
+        Colour: the squared error is averaged over the 3 channels."""
         x = self._prepare(images)
-        err = ((x - self._reconstruct(x)) ** 2)[:, 0].numpy()
+        err = (x - self._reconstruct(x)) ** 2
+        err = (err[:, 0] if self.config["in_ch"] == 1 else err.mean(dim=1)).numpy()
         heatmaps = np.stack([gaussian_filter(e, SMOOTH_SIGMA) for e in err]).astype(np.float32)
         return heatmaps.reshape(len(heatmaps), -1).max(axis=1), heatmaps
 
     def predict(self, image):
-        """One H x W image -> (score, heat-map H x W). Higher = more anomalous."""
+        """One H x W (colour: 3 x H x W) image -> (score, heat-map H x W). Higher = more anomalous."""
         scores, heatmaps = self.predict_many(np.asarray(image)[None])
         return float(scores[0]), heatmaps[0]
 
     def reconstruct(self, images):
-        """Rebuilt images N x H x W, for plots."""
-        return self._reconstruct(self._prepare(images))[:, 0].numpy()
+        """Rebuilt images N x H x W (colour: N x 3 x H x W), for plots."""
+        rec = self._reconstruct(self._prepare(images))
+        return (rec[:, 0] if self.config["in_ch"] == 1 else rec).numpy()
 
     def save(self, path=CHECKPOINTS / "autoencoder.pt"):
         torch.save({"config": self.config, "state_dict": self.model.state_dict(),
@@ -181,12 +201,12 @@ class AutoencoderDetector:
         return det
 
 
-def _save_figures(det, val_files, val_images, tag):
+def _save_figures(det, val_files, val_images, tag, figures, n_train):
     import matplotlib.pyplot as plt
     h = det.history
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.plot(h["epoch"], h["train_loss"], label="train (280 good)")
-    ax.plot(h["epoch"], h["val_loss"], label="validation (40 good)")
+    ax.plot(h["epoch"], h["train_loss"], label=f"train ({n_train} good)")
+    ax.plot(h["epoch"], h["val_loss"], label=f"validation ({len(val_files)} good)")
     ax.axvline(det.best_epoch, color="gray", ls="--", lw=1, label=f"best epoch {det.best_epoch}")
     ax.set_yscale("log")
     ax.set_xlabel("epoch")
@@ -195,7 +215,7 @@ def _save_figures(det, val_files, val_images, tag):
     ax.legend()
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(FIGURES / f"{tag}_loss_curve.png", dpi=100)
+    fig.savefig(figures / f"{tag}_loss_curve.png", dpi=100)
     plt.close(fig)
 
     n = 5                                                    # VALIDATION images only
@@ -203,16 +223,16 @@ def _save_figures(det, val_files, val_images, tag):
     scores, maps = det.predict_many(val_images[:n])
     fig, axes = plt.subplots(n, 3, figsize=(9, 3 * n))
     for row, f, img, rec, s, m in zip(axes, val_files, val_images, recon, scores, maps):
-        row[0].imshow(img, cmap="gray", vmin=0, vmax=1)
+        row[0].imshow(to_display(img), cmap="gray", vmin=0, vmax=1)
         row[0].set_title(f"original {f.split('/')[-1]}", fontsize=9)
-        row[1].imshow(rec, cmap="gray", vmin=0, vmax=1)
+        row[1].imshow(to_display(rec), cmap="gray", vmin=0, vmax=1)
         row[1].set_title("reconstruction", fontsize=9)
         row[2].imshow(m, cmap="jet")
         row[2].set_title(f"smoothed error, score {s:.4f}", fontsize=9)
     for ax in axes.flat:
         ax.axis("off")
     fig.tight_layout()
-    fig.savefig(FIGURES / f"{tag}_val_reconstructions.png", dpi=80)
+    fig.savefig(figures / f"{tag}_val_reconstructions.png", dpi=80)
     plt.close(fig)
 
 
@@ -220,18 +240,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train or load the autoencoder (no test images used).")
     parser.add_argument("--retrain", action="store_true", help="train even if a checkpoint exists")
     parser.add_argument("--normalize-brightness", action="store_true")
+    parser.add_argument("--category", default="screw", help="MVTec category (default screw = v1)")
     args = parser.parse_args()
 
+    cat = get_category(args.category)
+    for d in (cat["results"], cat["figures"], cat["checkpoints"]):
+        d.mkdir(parents=True, exist_ok=True)
     tag = "ae_bn" if args.normalize_brightness else "ae"     # bn = brightness-normalised
-    ckpt = CHECKPOINTS / ("autoencoder_bn.pt" if args.normalize_brightness else "autoencoder.pt")
-    split = get_split()
-    train_images, val_images = load_images(split["train"]), load_images(split["val"])
+    ckpt = cat["checkpoints"] / ("autoencoder_bn.pt" if args.normalize_brightness else "autoencoder.pt")
+    split = get_split(args.category)
+    train_images = load_images(split["train"], category=args.category)
+    val_images = load_images(split["val"], category=args.category)
 
     if ckpt.exists() and not args.retrain:
         det = AutoencoderDetector.load(ckpt)
         print("loaded", ckpt)
     else:
-        det = AutoencoderDetector(normalize_brightness=args.normalize_brightness)
+        det = AutoencoderDetector(normalize_brightness=args.normalize_brightness, category=args.category)
         print(det.model)
         print("device:", det.device, "| parameters:",
               f"{sum(p.numel() for p in det.model.parameters()):,}")
@@ -241,18 +266,20 @@ if __name__ == "__main__":
         except torch.cuda.OutOfMemoryError:                  # fall back to a smaller batch
             torch.cuda.empty_cache()
             print("out of GPU memory, retrying with batch size 4")
-            det = AutoencoderDetector(normalize_brightness=args.normalize_brightness, batch_size=4)
+            det = AutoencoderDetector(normalize_brightness=args.normalize_brightness, batch_size=4,
+                                      category=args.category)
             det.fit(train_images, val_images)
         print(f"training time: {(time.time() - t0) / 60:.1f} min")
         det.save(ckpt)
         print("saved", ckpt)
 
     h = det.history
-    with open(RESULTS / f"{tag}_history.csv", "w") as f:
+    assert det.config["category"] == args.category, f"{ckpt} belongs to {det.config['category']}"
+    with open(cat["results"] / f"{tag}_history.csv", "w") as f:
         f.write("epoch,train_loss,val_loss\n")
         for e, tr, va in zip(h["epoch"], h["train_loss"], h["val_loss"]):
             f.write(f"{e},{tr:.6f},{va:.6f}\n")
-    _save_figures(det, split["val"], val_images, tag)
+    _save_figures(det, split["val"], val_images, tag, cat["figures"], len(split["train"]))
 
     b = det.best_epoch - 1
     print(f"epoch 1: train {h['train_loss'][0]:.5f} val {h['val_loss'][0]:.5f} | "
@@ -264,4 +291,5 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         print(f"GPU memory peak: {torch.cuda.max_memory_allocated() / 2**20:.0f} MB")
         torch.cuda.empty_cache()
-    print("figures:", FIGURES / f"{tag}_loss_curve.png", "|", FIGURES / f"{tag}_val_reconstructions.png")
+    print("figures:", cat["figures"] / f"{tag}_loss_curve.png", "|",
+          cat["figures"] / f"{tag}_val_reconstructions.png")
