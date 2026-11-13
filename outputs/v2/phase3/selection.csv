@@ -1,0 +1,4 @@
+# v2 phase 3c: candidates on synthetic defects (validation images only)
+model,v2,rule
+PatchCore,pc_raw,no candidate passed: v2 = v1
+autoencoder,ae_raw,no candidate passed: v2 = v1

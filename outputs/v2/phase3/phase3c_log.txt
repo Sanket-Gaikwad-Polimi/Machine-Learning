@@ -1,0 +1,249 @@
+phase3c.py started 2026-11-13 01:22 | v2 phase 3c: candidates on synthetic defects (validation images only)
+sha256 of the code and decisions (fixed before scoring):
+  6641aed4f8b0f0237d2586ad4c3ba199199c64384f12f37b9147408365b25ba5  decisions.md
+  e22a0d4b8f288b5581ab3964643a181aab081142a6679dbf73565ec85081b5b2  phase2.py
+  d7f6731278b7f360726be348da9897fecc320e954e454b6b34056972316a58f4  phase3_checks.py
+  f5f510f1a0966b5bb101c288f5c659dbdc91575d56f403c58ca0e33b5b642827  phase3c.py
+  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  src/__init__.py
+  0afd365d30214773c54583d506ad040570adad7464fbd6509f4b8f55dcddafb3  src/autoencoder.py
+  0d4b9a56e8d1b189a3da3e30a528889381d0396631fbe97c86b6cde4715dd197  src/categories.py
+  eab9791fd73ca1914d3df69c6ed38d6665b61721d6b64d68e0c644ffee91bea7  src/data.py
+  d1e5c2318b1959ad5dbe7e42dc3a5039135b87391105eb9a7cb0b9036e53fe7a  src/masks.py
+  d9acc52d6fc17e73afe852512db9ff97881dbdb0e8a2a393edee5f959ff5a523  src/metrics.py
+  b00c0b8b1d419d77bb13bcbf01a16e4c8aa73fff514bd29048f59e6ad536656c  src/patchcore.py
+  79f4782a02687b95037410eb574938a17e7ddcddaae8f40ef669b739d6e4a113  src/paths.py
+  bc9f68dbf0d0ef209b63cf8bd975921d8b2743dc33357df121c28430d033a55c  src/synthetic.py
+hashed 73 earlier files (v1 outputs, checkpoints except v2/, analysis, v2/phase2, v2/phase3)
+
+== 1. BUILD (train/val only) ==
+epoch   1/120  train 0.21104  val 0.12626  (7.4 s)  *best
+epoch   2/120  train 0.13224  val 0.11464  (6.6 s)  *best
+epoch   3/120  train 0.10609  val 0.09483  (6.6 s)  *best
+epoch   4/120  train 0.08541  val 0.07865  (6.5 s)  *best
+epoch   5/120  train 0.07544  val 0.07222  (6.6 s)  *best
+epoch   6/120  train 0.06922  val 0.06721  (6.5 s)  *best
+epoch   7/120  train 0.06206  val 0.05928  (6.6 s)  *best
+epoch   8/120  train 0.05545  val 0.05344  (6.6 s)  *best
+epoch   9/120  train 0.05294  val 0.05192  (6.6 s)  *best
+epoch  10/120  train 0.05098  val 0.05009  (6.6 s)  *best
+epoch  11/120  train 0.04808  val 0.04588  (6.6 s)  *best
+epoch  12/120  train 0.04468  val 0.04303  (6.6 s)  *best
+epoch  13/120  train 0.04139  val 0.04028  (6.6 s)  *best
+epoch  14/120  train 0.03905  val 0.03963  (6.6 s)  *best
+epoch  15/120  train 0.03749  val 0.03596  (6.6 s)  *best
+epoch  16/120  train 0.03609  val 0.03600  (6.5 s)
+epoch  17/120  train 0.03537  val 0.03594  (6.6 s)  *best
+epoch  18/120  train 0.03469  val 0.03438  (6.6 s)  *best
+epoch  19/120  train 0.03377  val 0.03334  (6.6 s)  *best
+epoch  20/120  train 0.03325  val 0.03297  (6.6 s)  *best
+epoch  21/120  train 0.03282  val 0.03217  (6.6 s)  *best
+epoch  22/120  train 0.03243  val 0.03139  (6.6 s)  *best
+epoch  23/120  train 0.03187  val 0.03103  (6.6 s)  *best
+epoch  24/120  train 0.03137  val 0.03046  (6.6 s)  *best
+epoch  25/120  train 0.03072  val 0.03031  (6.6 s)  *best
+epoch  26/120  train 0.03055  val 0.03193  (6.6 s)
+epoch  27/120  train 0.03002  val 0.02941  (6.6 s)  *best
+epoch  28/120  train 0.02973  val 0.03057  (6.6 s)
+epoch  29/120  train 0.02927  val 0.03088  (6.6 s)
+epoch  30/120  train 0.02898  val 0.02831  (6.6 s)  *best
+epoch  31/120  train 0.02837  val 0.02807  (6.6 s)  *best
+epoch  32/120  train 0.02816  val 0.02768  (6.6 s)  *best
+epoch  33/120  train 0.02784  val 0.02739  (6.6 s)  *best
+epoch  34/120  train 0.02759  val 0.02646  (6.6 s)  *best
+epoch  35/120  train 0.02722  val 0.02604  (6.5 s)  *best
+epoch  36/120  train 0.02713  val 0.02626  (6.5 s)
+epoch  37/120  train 0.02674  val 0.02612  (6.6 s)
+epoch  38/120  train 0.02637  val 0.02560  (6.6 s)  *best
+epoch  39/120  train 0.02624  val 0.02506  (6.6 s)  *best
+epoch  40/120  train 0.02600  val 0.02605  (6.6 s)
+epoch  41/120  train 0.02574  val 0.02529  (6.6 s)
+epoch  42/120  train 0.02562  val 0.02509  (6.5 s)
+epoch  43/120  train 0.02550  val 0.02412  (6.6 s)  *best
+epoch  44/120  train 0.02521  val 0.02407  (6.6 s)  *best
+epoch  45/120  train 0.02485  val 0.02486  (6.6 s)
+epoch  46/120  train 0.02481  val 0.02369  (6.6 s)  *best
+epoch  47/120  train 0.02471  val 0.02371  (6.5 s)
+epoch  48/120  train 0.02461  val 0.02425  (6.6 s)
+epoch  49/120  train 0.02449  val 0.02370  (6.6 s)
+epoch  50/120  train 0.02427  val 0.02346  (6.6 s)  *best
+epoch  51/120  train 0.02421  val 0.02317  (6.6 s)  *best
+epoch  52/120  train 0.02403  val 0.02307  (6.6 s)  *best
+epoch  53/120  train 0.02406  val 0.02292  (6.6 s)  *best
+epoch  54/120  train 0.02384  val 0.02294  (6.6 s)
+epoch  55/120  train 0.02373  val 0.02254  (6.6 s)  *best
+epoch  56/120  train 0.02365  val 0.02272  (6.6 s)
+epoch  57/120  train 0.02365  val 0.02254  (6.6 s)
+epoch  58/120  train 0.02356  val 0.02264  (6.6 s)
+epoch  59/120  train 0.02348  val 0.02274  (6.6 s)
+epoch  60/120  train 0.02338  val 0.02229  (6.6 s)  *best
+epoch  61/120  train 0.02335  val 0.02223  (6.6 s)  *best
+epoch  62/120  train 0.02313  val 0.02227  (6.6 s)
+epoch  63/120  train 0.02314  val 0.02196  (6.5 s)  *best
+epoch  64/120  train 0.02304  val 0.02240  (6.6 s)
+epoch  65/120  train 0.02309  val 0.02197  (6.6 s)
+epoch  66/120  train 0.02269  val 0.02231  (6.5 s)
+epoch  67/120  train 0.02273  val 0.02196  (6.6 s)
+epoch  68/120  train 0.02265  val 0.02160  (6.6 s)  *best
+epoch  69/120  train 0.02279  val 0.02229  (6.6 s)
+epoch  70/120  train 0.02257  val 0.02148  (6.6 s)  *best
+epoch  71/120  train 0.02246  val 0.02145  (6.5 s)  *best
+epoch  72/120  train 0.02260  val 0.02147  (6.5 s)
+epoch  73/120  train 0.02247  val 0.02137  (6.6 s)  *best
+epoch  74/120  train 0.02241  val 0.02159  (6.6 s)
+epoch  75/120  train 0.02235  val 0.02134  (6.5 s)  *best
+epoch  76/120  train 0.02233  val 0.02160  (6.6 s)
+epoch  77/120  train 0.02230  val 0.02155  (6.5 s)
+epoch  78/120  train 0.02233  val 0.02134  (6.5 s)
+epoch  79/120  train 0.02203  val 0.02099  (6.6 s)  *best
+epoch  80/120  train 0.02197  val 0.02100  (6.6 s)
+epoch  81/120  train 0.02206  val 0.02150  (6.6 s)
+epoch  82/120  train 0.02200  val 0.02086  (6.6 s)  *best
+epoch  83/120  train 0.02185  val 0.02128  (6.6 s)
+epoch  84/120  train 0.02186  val 0.02115  (6.6 s)
+epoch  85/120  train 0.02181  val 0.02106  (6.6 s)
+epoch  86/120  train 0.02192  val 0.02091  (6.6 s)
+epoch  87/120  train 0.02179  val 0.02067  (6.5 s)  *best
+epoch  88/120  train 0.02181  val 0.02129  (6.6 s)
+epoch  89/120  train 0.02169  val 0.02078  (6.6 s)
+epoch  90/120  train 0.02169  val 0.02065  (6.6 s)  *best
+epoch  91/120  train 0.02161  val 0.02068  (6.6 s)
+epoch  92/120  train 0.02156  val 0.02067  (6.6 s)
+epoch  93/120  train 0.02152  val 0.02045  (6.6 s)  *best
+epoch  94/120  train 0.02153  val 0.02055  (6.6 s)
+epoch  95/120  train 0.02140  val 0.02056  (6.6 s)
+epoch  96/120  train 0.02145  val 0.02051  (6.5 s)
+epoch  97/120  train 0.02141  val 0.02091  (6.6 s)
+epoch  98/120  train 0.02132  val 0.02098  (6.6 s)
+epoch  99/120  train 0.02137  val 0.02061  (6.6 s)
+epoch 100/120  train 0.02133  val 0.02085  (6.6 s)
+epoch 101/120  train 0.02130  val 0.02040  (6.6 s)  *best
+epoch 102/120  train 0.02116  val 0.02033  (6.6 s)  *best
+epoch 103/120  train 0.02120  val 0.02055  (6.6 s)
+epoch 104/120  train 0.02110  val 0.02008  (6.6 s)  *best
+epoch 105/120  train 0.02113  val 0.02136  (6.6 s)
+epoch 106/120  train 0.02106  val 0.02011  (6.6 s)
+epoch 107/120  train 0.02107  val 0.02038  (6.6 s)
+epoch 108/120  train 0.02115  val 0.02025  (6.6 s)
+epoch 109/120  train 0.02104  val 0.02028  (6.6 s)
+epoch 110/120  train 0.02088  val 0.02007  (6.5 s)  *best
+epoch 111/120  train 0.02096  val 0.02002  (6.6 s)  *best
+epoch 112/120  train 0.02089  val 0.02064  (6.6 s)
+epoch 113/120  train 0.02100  val 0.02014  (6.6 s)
+epoch 114/120  train 0.02093  val 0.02102  (6.6 s)
+epoch 115/120  train 0.02081  val 0.01997  (6.6 s)  *best
+epoch 116/120  train 0.02089  val 0.02004  (6.6 s)
+epoch 117/120  train 0.02083  val 0.01991  (6.6 s)  *best
+epoch 118/120  train 0.02078  val 0.02006  (6.6 s)
+epoch 119/120  train 0.02069  val 0.01983  (6.6 s)  *best
+epoch 120/120  train 0.02066  val 0.01987  (6.5 s)
+ae_ssim trained in 13.2 min, best epoch 119, GPU peak 298 MB, saved D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\v2\ae_ssim.pt
+feature extraction: 14.7 s | full bank (286720, 1536) = 1.64 GB
+coreset: 124.7 s | bank (28672, 1536) = 0.164 GB
+pc_512 built in 2.3 min, bank (28672, 1536), GPU peak 723 MB, RAM peak 3986 MB, saved D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\v2\pc_512.pt
+
+== 2-3. DATA AND SCORING ==
+files read: {'screw/train/good': 840} (each read counted; distinct files: 280 train + 40 val, all screw/train/good)
+[pc_raw] scored 40 + 160 images in 18 s | T_image 1.6781 T_pixel 1.4096
+[pc_mask] scored 40 + 160 images in 17 s | T_image 1.5759 T_pixel 1.3951
+[pc_512] scored 40 + 160 images in 73 s | T_image 2.1472 T_pixel 1.6547
+[pc_512_mask] scored 40 + 160 images in 71 s | T_image 2.1169 T_pixel 1.6429
+[ae_raw] scored 40 + 160 images in 1 s | T_image 0.011385 T_pixel 0.0064485
+[ae_mask] scored 40 + 160 images in 1 s | T_image 0.011385 T_pixel 0.0064485
+[ae_ssim] scored 40 + 160 images in 1 s | T_image 0.60876 T_pixel 0.46682
+[ae_ssim_mask] scored 40 + 160 images in 1 s | T_image 0.60876 T_pixel 0.46682
+[pc_raw] reproduction: val scores max diff 4.9e-08 | synthetic score/T max diff 5.0e-06 (CSV rounded to 5 decimals) | T_image rel diff 0.0e+00 | T_pixel rel diff 0.0e+00
+[ae_raw] reproduction: val scores max diff 4.1e-10 | synthetic score/T max diff 4.9e-06 (CSV rounded to 5 decimals) | T_image rel diff 0.0e+00 | T_pixel rel diff 0.0e+00
+
+== 4. METRICS ==
+
+auroc:
+group         scratch   spot  cutpaste  thread_smear  all synthetic
+candidate                                                          
+pc_raw          0.626  0.688     0.960         0.544          0.705
+pc_512          0.734  0.638     0.975         0.598          0.736
+pc_mask         0.633  0.684     0.962         0.543          0.706
+pc_512_mask     0.728  0.646     0.979         0.617          0.742
+ae_raw          0.503  0.541     0.556         0.480          0.520
+ae_ssim         0.507  0.507     0.501         0.480          0.499
+ae_mask         0.503  0.541     0.556         0.480          0.520
+ae_ssim_mask    0.507  0.507     0.501         0.480          0.499
+
+hit_rate:
+group         scratch   spot  cutpaste  thread_smear  all synthetic
+candidate                                                          
+pc_raw          0.375  0.550     0.850         0.200          0.494
+pc_512          0.625  0.550     0.975         0.425          0.644
+pc_mask         0.500  0.675     0.875         0.275          0.581
+pc_512_mask     0.625  0.600     0.975         0.450          0.662
+ae_raw          0.175  0.175     0.300         0.100          0.188
+ae_ssim         0.175  0.075     0.200         0.100          0.138
+ae_mask         0.175  0.175     0.300         0.100          0.188
+ae_ssim_mask    0.175  0.075     0.200         0.100          0.138
+
+recall:
+group         scratch   spot  cutpaste  thread_smear  all synthetic
+candidate                                                          
+pc_raw          0.150  0.100     0.600         0.025          0.219
+pc_512          0.225  0.075     0.825         0.075          0.300
+pc_mask         0.225  0.175     0.725         0.025          0.288
+pc_512_mask     0.275  0.125     0.875         0.075          0.338
+ae_raw          0.025  0.025     0.050         0.000          0.025
+ae_ssim         0.050  0.025     0.000         0.025          0.025
+ae_mask         0.025  0.025     0.050         0.000          0.025
+ae_ssim_mask    0.050  0.025     0.000         0.025          0.025
+
+pixel_auroc:
+group         scratch   spot  cutpaste  thread_smear  all synthetic
+candidate                                                          
+pc_raw          0.892  0.936     0.992         0.877          0.926
+pc_512          0.979  0.977     0.999         0.981          0.984
+pc_mask         0.970  0.981     0.995         0.965          0.976
+pc_512_mask     0.983  0.983     0.999         0.985          0.987
+ae_raw          0.958  0.951     0.967         0.943          0.954
+ae_ssim         0.968  0.955     0.979         0.949          0.962
+ae_mask         0.958  0.951     0.967         0.943          0.954
+ae_ssim_mask    0.968  0.955     0.979         0.950          0.962
+
+iou:
+group         scratch   spot  cutpaste  thread_smear  all synthetic
+candidate                                                          
+pc_raw          0.033  0.089     0.217         0.025          0.091
+pc_512          0.081  0.139     0.290         0.098          0.152
+pc_mask         0.030  0.103     0.216         0.024          0.093
+pc_512_mask     0.087  0.145     0.281         0.110          0.156
+ae_raw          0.008  0.031     0.051         0.001          0.023
+ae_ssim         0.009  0.009     0.015         0.003          0.009
+ae_mask         0.008  0.031     0.051         0.001          0.023
+ae_ssim_mask    0.009  0.009     0.015         0.003          0.009
+
+dice:
+group         scratch   spot  cutpaste  thread_smear  all synthetic
+candidate                                                          
+pc_raw          0.056  0.134     0.334         0.038          0.140
+pc_512          0.138  0.202     0.435         0.138          0.228
+pc_mask         0.053  0.153     0.331         0.037          0.143
+pc_512_mask     0.148  0.211     0.425         0.157          0.235
+ae_raw          0.015  0.050     0.084         0.003          0.038
+ae_ssim         0.016  0.014     0.026         0.006          0.015
+ae_mask         0.015  0.050     0.084         0.003          0.038
+ae_ssim_mask    0.016  0.014     0.026         0.006          0.015
+
+== 5. BOOTSTRAP (2000 paired cluster resamples, seed 42) AND DECISION RULE ==
+   candidate baseline  auroc_baseline  auroc_candidate           gain [95% CI]  hit_rate_change      worst type  c1_ci_low_gt_0  c2_hit_drop_le_0.05  c3_type_drop_le_0.10                verdict
+      pc_512   pc_raw           0.705            0.736 +0.031 [-0.004, +0.071]            0.150     spot -0.050           False                 True                  True does not beat baseline
+     pc_mask   pc_raw           0.705            0.706 +0.001 [-0.023, +0.023]            0.088     spot -0.004           False                 True                  True does not beat baseline
+ pc_512_mask   pc_raw           0.705            0.742 +0.038 [-0.000, +0.081]            0.169     spot -0.042           False                 True                  True does not beat baseline
+     ae_ssim   ae_raw           0.520            0.499 -0.021 [-0.045, +0.003]           -0.050 cutpaste -0.054           False                 True                  True does not beat baseline
+     ae_mask   ae_raw           0.520            0.520 +0.000 [+0.000, +0.000]            0.000  scratch +0.000           False                 True                  True does not beat baseline
+ae_ssim_mask   ae_raw           0.520            0.499 -0.021 [-0.045, +0.003]           -0.050 cutpaste -0.054           False                 True                  True does not beat baseline
+
+SELECTION:
+      model     v2                         rule
+  PatchCore pc_raw no candidate passed: v2 = v1
+autoencoder ae_raw no candidate passed: v2 = v1
+
+build info: {'ae_ssim_build_min': 13.17, 'ae_ssim_gpu_peak_mb': 297.89, 'ae_ssim_best_epoch': 119, 'pc_512_build_min': 2.34, 'pc_512_gpu_peak_mb': 723.31, 'pc_512_ram_peak_mb': 3985.75}
+
+earlier files: 73 hashed, 0 changed []
+code and decisions.md unchanged during the run
+run time: 20.6 min
