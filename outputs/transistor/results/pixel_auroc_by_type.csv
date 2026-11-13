@@ -1,0 +1,20 @@
+# computed after 4c from saved heat-maps, no re-scoring
+label,model,group,n_images,defect_pixel_share_of_test_pct,pixel_auroc
+"computed after 4c from saved heat-maps, no re-scoring",pc_raw,bent_lead,70,3.331051718374429,0.9974309026885553
+"computed after 4c from saved heat-maps, no re-scoring",pc_raw,cut_lead,70,3.416055140796867,0.9956184151254429
+"computed after 4c from saved heat-maps, no re-scoring",pc_raw,damaged_case,70,5.943553907132965,0.996882639911425
+"computed after 4c from saved heat-maps, no re-scoring",pc_raw,misplaced,70,87.30933923369574,0.9849593588154131
+"computed after 4c from saved heat-maps, no re-scoring",pc_raw,all 100 test images,100,,0.9798641500630236
+"computed after 4c from saved heat-maps, no re-scoring",pc_raw,all except misplaced,90,,0.9934877953309378
+"computed after 4c from saved heat-maps, no re-scoring",ae_raw,bent_lead,70,3.331051718374429,0.9306570059046186
+"computed after 4c from saved heat-maps, no re-scoring",ae_raw,cut_lead,70,3.416055140796867,0.8591813959760448
+"computed after 4c from saved heat-maps, no re-scoring",ae_raw,damaged_case,70,5.943553907132965,0.8672726807067379
+"computed after 4c from saved heat-maps, no re-scoring",ae_raw,misplaced,70,87.30933923369574,0.7439509605935413
+"computed after 4c from saved heat-maps, no re-scoring",ae_raw,all 100 test images,100,,0.7574136610805037
+"computed after 4c from saved heat-maps, no re-scoring",ae_raw,all except misplaced,90,,0.8779061580929819
+"computed after 4c from saved heat-maps, no re-scoring",pc_512,bent_lead,70,3.331051718374429,0.9709527723358904
+"computed after 4c from saved heat-maps, no re-scoring",pc_512,cut_lead,70,3.416055140796867,0.87951570716325
+"computed after 4c from saved heat-maps, no re-scoring",pc_512,damaged_case,70,5.943553907132965,0.9970505555863841
+"computed after 4c from saved heat-maps, no re-scoring",pc_512,misplaced,70,87.30933923369574,0.9032001167995585
+"computed after 4c from saved heat-maps, no re-scoring",pc_512,all 100 test images,100,,0.89977223733187
+"computed after 4c from saved heat-maps, no re-scoring",pc_512,all except misplaced,90,,0.9520840016453979

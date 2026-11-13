@@ -1,0 +1,165 @@
+phase4.py --score transistor started 2026-11-13 13:16
+sha256 of decisions.md and all code before the run:
+  9ec1cb0c7f0250dd1faebc72de05d974acd27f3d355c716634d11e42709da2d3  decisions.md
+  5e8ff8c492cb49f6998006b692b2b124a4e2e7f8679daced8358aa54615ac373  analysis.py
+  337c51b482108dc30d8cb19aa586b32e3d40bd0ab5f01debb000bd95be52500d  check_env.py
+  00c8d88446d87c0fbfa1d1f7ac7b644b39548bad07187e2039f68366417cf3af  demo.py
+  d9ee7caf7014dadbeec1ca5d8a806c4cabea2ae942af25e509048a3428347d28  diagnostics.py
+  204e3db9c90b2bb02ecd36612731efad900dcddcce4fe8495167c83538c12d64  eda_transistor.py
+  8fde69ff55a97942e8c4e96bf1b1b06ae0004df30fcdd4e5aefedcdecaaf93a7  evaluate.py
+  e22a0d4b8f288b5581ab3964643a181aab081142a6679dbf73565ec85081b5b2  phase2.py
+  d7f6731278b7f360726be348da9897fecc320e954e454b6b34056972316a58f4  phase3_checks.py
+  f5f510f1a0966b5bb101c288f5c659dbdc91575d56f403c58ca0e33b5b642827  phase3c.py
+  593681a87e328cb09eb4779645dcf4274c600d488ba146d214b211788bfbde28  phase4.py
+  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  src/__init__.py
+  0afd365d30214773c54583d506ad040570adad7464fbd6509f4b8f55dcddafb3  src/autoencoder.py
+  a38846647a5cd209733c97efd0955b86b6ede73e2bdccc7041e200a81eaa5399  src/categories.py
+  4b34f495563e630a50b1748eb29bc5422f356da0c7a3a4339541b683c5afb273  src/data.py
+  d1e5c2318b1959ad5dbe7e42dc3a5039135b87391105eb9a7cb0b9036e53fe7a  src/masks.py
+  d9acc52d6fc17e73afe852512db9ff97881dbdb0e8a2a393edee5f959ff5a523  src/metrics.py
+  b00c0b8b1d419d77bb13bcbf01a16e4c8aa73fff514bd29048f59e6ad536656c  src/patchcore.py
+  79f4782a02687b95037410eb574938a17e7ddcddaae8f40ef669b739d6e4a113  src/paths.py
+  bc9f68dbf0d0ef209b63cf8bd975921d8b2743dc33357df121c28430d033a55c  src/synthetic.py
+hashed 90 earlier files
+transistor train (173, 3, 256, 256), val (40, 3, 256, 256)
+epoch   1/120  train 0.04648  val 0.01800  (1.5 s)  *best
+epoch   2/120  train 0.01117  val 0.00692  (0.9 s)  *best
+epoch   3/120  train 0.00541  val 0.00498  (0.9 s)  *best
+epoch   4/120  train 0.00404  val 0.00415  (0.9 s)  *best
+epoch   5/120  train 0.00339  val 0.00343  (0.9 s)  *best
+epoch   6/120  train 0.00300  val 0.00306  (0.9 s)  *best
+epoch   7/120  train 0.00269  val 0.00268  (0.9 s)  *best
+epoch   8/120  train 0.00245  val 0.00247  (0.9 s)  *best
+epoch   9/120  train 0.00226  val 0.00221  (0.9 s)  *best
+epoch  10/120  train 0.00214  val 0.00231  (0.9 s)
+epoch  11/120  train 0.00205  val 0.00218  (0.9 s)  *best
+epoch  12/120  train 0.00193  val 0.00206  (0.9 s)  *best
+epoch  13/120  train 0.00183  val 0.00183  (0.9 s)  *best
+epoch  14/120  train 0.00171  val 0.00169  (0.9 s)  *best
+epoch  15/120  train 0.00162  val 0.00164  (0.9 s)  *best
+epoch  16/120  train 0.00152  val 0.00152  (0.9 s)  *best
+epoch  17/120  train 0.00148  val 0.00150  (0.9 s)  *best
+epoch  18/120  train 0.00138  val 0.00148  (0.9 s)  *best
+epoch  19/120  train 0.00138  val 0.00143  (0.9 s)  *best
+epoch  20/120  train 0.00132  val 0.00137  (0.9 s)  *best
+epoch  21/120  train 0.00127  val 0.00142  (0.9 s)
+epoch  22/120  train 0.00123  val 0.00127  (0.9 s)  *best
+epoch  23/120  train 0.00122  val 0.00129  (0.9 s)
+epoch  24/120  train 0.00114  val 0.00117  (0.9 s)  *best
+epoch  25/120  train 0.00112  val 0.00121  (0.9 s)
+epoch  26/120  train 0.00108  val 0.00113  (0.9 s)  *best
+epoch  27/120  train 0.00109  val 0.00122  (0.9 s)
+epoch  28/120  train 0.00105  val 0.00116  (0.9 s)
+epoch  29/120  train 0.00099  val 0.00109  (0.9 s)  *best
+epoch  30/120  train 0.00102  val 0.00113  (0.9 s)
+epoch  31/120  train 0.00101  val 0.00105  (0.9 s)  *best
+epoch  32/120  train 0.00098  val 0.00106  (0.9 s)
+epoch  33/120  train 0.00099  val 0.00104  (0.9 s)  *best
+epoch  34/120  train 0.00096  val 0.00103  (0.9 s)  *best
+epoch  35/120  train 0.00093  val 0.00100  (0.9 s)  *best
+epoch  36/120  train 0.00089  val 0.00097  (0.9 s)  *best
+epoch  37/120  train 0.00091  val 0.00094  (0.9 s)  *best
+epoch  38/120  train 0.00085  val 0.00095  (0.9 s)
+epoch  39/120  train 0.00082  val 0.00095  (0.9 s)
+epoch  40/120  train 0.00082  val 0.00093  (0.9 s)  *best
+epoch  41/120  train 0.00085  val 0.00096  (0.9 s)
+epoch  42/120  train 0.00086  val 0.00094  (0.9 s)
+epoch  43/120  train 0.00081  val 0.00094  (0.9 s)
+epoch  44/120  train 0.00079  val 0.00090  (0.9 s)  *best
+epoch  45/120  train 0.00076  val 0.00089  (0.9 s)  *best
+epoch  46/120  train 0.00076  val 0.00088  (0.9 s)  *best
+epoch  47/120  train 0.00077  val 0.00104  (0.9 s)
+epoch  48/120  train 0.00083  val 0.00095  (0.9 s)
+epoch  49/120  train 0.00073  val 0.00088  (0.9 s)  *best
+epoch  50/120  train 0.00073  val 0.00091  (0.9 s)
+epoch  51/120  train 0.00070  val 0.00089  (0.9 s)
+epoch  52/120  train 0.00069  val 0.00084  (0.9 s)  *best
+epoch  53/120  train 0.00069  val 0.00086  (0.9 s)
+epoch  54/120  train 0.00072  val 0.00085  (0.9 s)
+epoch  55/120  train 0.00070  val 0.00085  (0.9 s)
+epoch  56/120  train 0.00070  val 0.00090  (0.9 s)
+epoch  57/120  train 0.00070  val 0.00096  (0.9 s)
+epoch  58/120  train 0.00072  val 0.00088  (0.9 s)
+epoch  59/120  train 0.00064  val 0.00082  (0.9 s)  *best
+epoch  60/120  train 0.00064  val 0.00081  (0.9 s)  *best
+epoch  61/120  train 0.00063  val 0.00080  (0.9 s)  *best
+epoch  62/120  train 0.00060  val 0.00079  (0.9 s)  *best
+epoch  63/120  train 0.00062  val 0.00079  (0.9 s)  *best
+epoch  64/120  train 0.00059  val 0.00079  (0.9 s)  *best
+epoch  65/120  train 0.00061  val 0.00084  (0.9 s)
+epoch  66/120  train 0.00061  val 0.00082  (0.9 s)
+epoch  67/120  train 0.00062  val 0.00085  (0.9 s)
+epoch  68/120  train 0.00061  val 0.00078  (0.9 s)  *best
+epoch  69/120  train 0.00061  val 0.00078  (0.9 s)  *best
+epoch  70/120  train 0.00058  val 0.00078  (0.9 s)  *best
+epoch  71/120  train 0.00061  val 0.00086  (0.9 s)
+epoch  72/120  train 0.00058  val 0.00081  (0.9 s)
+epoch  73/120  train 0.00060  val 0.00084  (0.9 s)
+epoch  74/120  train 0.00058  val 0.00078  (0.9 s)
+epoch  75/120  train 0.00054  val 0.00081  (0.9 s)
+epoch  76/120  train 0.00057  val 0.00078  (0.9 s)  *best
+epoch  77/120  train 0.00054  val 0.00079  (0.9 s)
+epoch  78/120  train 0.00054  val 0.00080  (0.9 s)
+epoch  79/120  train 0.00057  val 0.00080  (0.9 s)
+epoch  80/120  train 0.00051  val 0.00077  (0.9 s)  *best
+epoch  81/120  train 0.00053  val 0.00082  (0.9 s)
+epoch  82/120  train 0.00051  val 0.00076  (0.9 s)  *best
+epoch  83/120  train 0.00053  val 0.00080  (0.9 s)
+epoch  84/120  train 0.00050  val 0.00076  (0.9 s)  *best
+epoch  85/120  train 0.00050  val 0.00076  (0.9 s)
+epoch  86/120  train 0.00050  val 0.00075  (0.9 s)  *best
+epoch  87/120  train 0.00052  val 0.00075  (0.9 s)
+epoch  88/120  train 0.00051  val 0.00076  (0.9 s)
+epoch  89/120  train 0.00049  val 0.00075  (0.9 s)
+epoch  90/120  train 0.00047  val 0.00077  (0.9 s)
+epoch  91/120  train 0.00048  val 0.00076  (0.9 s)
+epoch  92/120  train 0.00047  val 0.00072  (0.9 s)  *best
+epoch  93/120  train 0.00048  val 0.00083  (0.9 s)
+epoch  94/120  train 0.00048  val 0.00075  (0.9 s)
+epoch  95/120  train 0.00049  val 0.00076  (0.9 s)
+epoch  96/120  train 0.00046  val 0.00080  (0.9 s)
+epoch  97/120  train 0.00047  val 0.00077  (0.9 s)
+epoch  98/120  train 0.00047  val 0.00073  (0.9 s)
+epoch  99/120  train 0.00044  val 0.00076  (0.9 s)
+epoch 100/120  train 0.00046  val 0.00084  (0.9 s)
+epoch 101/120  train 0.00049  val 0.00075  (0.9 s)
+epoch 102/120  train 0.00045  val 0.00075  (0.9 s)
+epoch 103/120  train 0.00046  val 0.00075  (0.9 s)
+epoch 104/120  train 0.00044  val 0.00074  (0.9 s)
+epoch 105/120  train 0.00041  val 0.00071  (0.9 s)  *best
+epoch 106/120  train 0.00041  val 0.00072  (0.9 s)
+epoch 107/120  train 0.00041  val 0.00072  (0.9 s)
+epoch 108/120  train 0.00042  val 0.00076  (0.9 s)
+epoch 109/120  train 0.00041  val 0.00077  (0.9 s)
+epoch 110/120  train 0.00043  val 0.00076  (0.9 s)
+epoch 111/120  train 0.00042  val 0.00072  (0.9 s)
+epoch 112/120  train 0.00040  val 0.00070  (0.9 s)  *best
+epoch 113/120  train 0.00042  val 0.00073  (0.9 s)
+epoch 114/120  train 0.00039  val 0.00070  (0.9 s)  *best
+epoch 115/120  train 0.00039  val 0.00072  (0.9 s)
+epoch 116/120  train 0.00041  val 0.00079  (0.9 s)
+epoch 117/120  train 0.00040  val 0.00071  (0.9 s)
+epoch 118/120  train 0.00039  val 0.00073  (0.9 s)
+epoch 119/120  train 0.00041  val 0.00073  (0.9 s)
+epoch 120/120  train 0.00039  val 0.00070  (0.9 s)
+[ae_raw] built in 1.7 min, GPU peak 297 MB, saved D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\transistor\autoencoder.pt, best epoch 114
+feature extraction: 2.4 s | full bank (177152, 1536) = 1.01 GB
+coreset: 47.9 s | bank (17715, 1536) = 0.101 GB
+[pc_raw] built in 0.8 min, GPU peak 450 MB, saved D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\transistor\patchcore_bank.pt, bank (17715, 1536)
+feature extraction: 9.4 s | full bank (177152, 1536) = 1.01 GB
+coreset: 47.9 s | bank (17715, 1536) = 0.101 GB
+[pc_512] built in 1.1 min, GPU peak 722 MB, saved D:\Second Year\Semester 3\MACHINE LEARNING FOR MECHANICAL SYSTEMS\Project - Anomaly Detection\outputs\checkpoints\transistor\pc_512.pt, bank (17715, 1536)
+ model  T_image  T_pixel  val_min  val_median  val_max
+pc_raw 2.133705 1.833056 1.589427    1.751397 2.188589
+ae_raw 0.049250 0.022390 0.012949    0.022969 0.052150
+pc_512 2.540032 2.034787 1.984591    2.125010 2.550927
+THRESHOLDS FROZEN (transistor)
+
+[pc_raw transistor] scored 100 test images in 6 s
+[ae_raw transistor] scored 100 test images in 1 s
+[pc_512 transistor] scored 100 test images in 27 s
+
+files read (count per folder): {'transistor/train/good': 253, 'transistor/test/bent_lead': 30, 'transistor/test/cut_lead': 30, 'transistor/test/damaged_case': 30, 'transistor/test/good': 180, 'transistor/test/misplaced': 30}
+earlier files: 90 hashed, 0 changed []
+code and decisions.md unchanged during the run
+run time: 5.0 min

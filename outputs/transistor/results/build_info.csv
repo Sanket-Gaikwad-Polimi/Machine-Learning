@@ -1,0 +1,5 @@
+# transistor test set, scored once (v2 = v1 models; pc_512 = declared extra)
+model,build_min,gpu_peak_mb,ram_peak_mb,best_epoch
+ae_raw,1.7481801112492878,297.23779296875,2315.2265625,114.0
+pc_raw,0.8493741869926452,449.93115234375,2728.72265625,
+pc_512,1.0720967451731365,722.431640625,3497.22265625,

@@ -1,0 +1,29 @@
+phase4.py --score screw started 2026-11-13 13:14
+sha256 of decisions.md and all code before the run:
+  9ec1cb0c7f0250dd1faebc72de05d974acd27f3d355c716634d11e42709da2d3  decisions.md
+  5e8ff8c492cb49f6998006b692b2b124a4e2e7f8679daced8358aa54615ac373  analysis.py
+  337c51b482108dc30d8cb19aa586b32e3d40bd0ab5f01debb000bd95be52500d  check_env.py
+  00c8d88446d87c0fbfa1d1f7ac7b644b39548bad07187e2039f68366417cf3af  demo.py
+  d9ee7caf7014dadbeec1ca5d8a806c4cabea2ae942af25e509048a3428347d28  diagnostics.py
+  204e3db9c90b2bb02ecd36612731efad900dcddcce4fe8495167c83538c12d64  eda_transistor.py
+  8fde69ff55a97942e8c4e96bf1b1b06ae0004df30fcdd4e5aefedcdecaaf93a7  evaluate.py
+  e22a0d4b8f288b5581ab3964643a181aab081142a6679dbf73565ec85081b5b2  phase2.py
+  d7f6731278b7f360726be348da9897fecc320e954e454b6b34056972316a58f4  phase3_checks.py
+  f5f510f1a0966b5bb101c288f5c659dbdc91575d56f403c58ca0e33b5b642827  phase3c.py
+  593681a87e328cb09eb4779645dcf4274c600d488ba146d214b211788bfbde28  phase4.py
+  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  src/__init__.py
+  0afd365d30214773c54583d506ad040570adad7464fbd6509f4b8f55dcddafb3  src/autoencoder.py
+  a38846647a5cd209733c97efd0955b86b6ede73e2bdccc7041e200a81eaa5399  src/categories.py
+  4b34f495563e630a50b1748eb29bc5422f356da0c7a3a4339541b683c5afb273  src/data.py
+  d1e5c2318b1959ad5dbe7e42dc3a5039135b87391105eb9a7cb0b9036e53fe7a  src/masks.py
+  d9acc52d6fc17e73afe852512db9ff97881dbdb0e8a2a393edee5f959ff5a523  src/metrics.py
+  b00c0b8b1d419d77bb13bcbf01a16e4c8aa73fff514bd29048f59e6ad536656c  src/patchcore.py
+  79f4782a02687b95037410eb574938a17e7ddcddaae8f40ef669b739d6e4a113  src/paths.py
+  bc9f68dbf0d0ef209b63cf8bd975921d8b2743dc33357df121c28430d033a55c  src/synthetic.py
+hashed 90 earlier files
+[pc_512 screw] scored 160 test images in 64 s
+
+files read (count per folder): {'screw/test/good': 41, 'screw/test/manipulated_front': 24, 'screw/test/scratch_head': 24, 'screw/test/scratch_neck': 25, 'screw/test/thread_side': 23, 'screw/test/thread_top': 23}
+earlier files: 90 hashed, 0 changed []
+code and decisions.md unchanged during the run
+run time: 1.2 min

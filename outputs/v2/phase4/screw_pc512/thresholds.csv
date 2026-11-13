@@ -1,0 +1,3 @@
+# post-hoc: screw test set seen before (pc_512, declared extra, not selected)
+model,T_image,T_pixel,source
+pc_512,2.14715313911438,1.6547330617904663,outputs/v2/phase3/candidate_thresholds.csv (40 screw val images)

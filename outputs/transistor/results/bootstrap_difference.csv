@@ -1,0 +1,4 @@
+# transistor test set, scored once (v2 = v1 models; pc_512 = declared extra)
+difference,estimate,ci95_low,ci95_high,share_le_0,n_resamples
+AUROC pc_raw - ae_raw,0.3783333333333333,0.26290625,0.4912604166666667,0.0,2000
+AUROC pc_512 - pc_raw,-0.013749999999999929,-0.04417708333333335,0.0012499999999999734,0.891,2000

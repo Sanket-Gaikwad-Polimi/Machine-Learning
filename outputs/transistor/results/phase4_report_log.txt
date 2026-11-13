@@ -1,0 +1,110 @@
+phase4.py --report started 2026-11-13 13:22
+sha256 of decisions.md and all code before the run:
+  9ec1cb0c7f0250dd1faebc72de05d974acd27f3d355c716634d11e42709da2d3  decisions.md
+  5e8ff8c492cb49f6998006b692b2b124a4e2e7f8679daced8358aa54615ac373  analysis.py
+  337c51b482108dc30d8cb19aa586b32e3d40bd0ab5f01debb000bd95be52500d  check_env.py
+  00c8d88446d87c0fbfa1d1f7ac7b644b39548bad07187e2039f68366417cf3af  demo.py
+  d9ee7caf7014dadbeec1ca5d8a806c4cabea2ae942af25e509048a3428347d28  diagnostics.py
+  204e3db9c90b2bb02ecd36612731efad900dcddcce4fe8495167c83538c12d64  eda_transistor.py
+  8fde69ff55a97942e8c4e96bf1b1b06ae0004df30fcdd4e5aefedcdecaaf93a7  evaluate.py
+  e22a0d4b8f288b5581ab3964643a181aab081142a6679dbf73565ec85081b5b2  phase2.py
+  d7f6731278b7f360726be348da9897fecc320e954e454b6b34056972316a58f4  phase3_checks.py
+  f5f510f1a0966b5bb101c288f5c659dbdc91575d56f403c58ca0e33b5b642827  phase3c.py
+  593681a87e328cb09eb4779645dcf4274c600d488ba146d214b211788bfbde28  phase4.py
+  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  src/__init__.py
+  0afd365d30214773c54583d506ad040570adad7464fbd6509f4b8f55dcddafb3  src/autoencoder.py
+  a38846647a5cd209733c97efd0955b86b6ede73e2bdccc7041e200a81eaa5399  src/categories.py
+  4b34f495563e630a50b1748eb29bc5422f356da0c7a3a4339541b683c5afb273  src/data.py
+  d1e5c2318b1959ad5dbe7e42dc3a5039135b87391105eb9a7cb0b9036e53fe7a  src/masks.py
+  d9acc52d6fc17e73afe852512db9ff97881dbdb0e8a2a393edee5f959ff5a523  src/metrics.py
+  b00c0b8b1d419d77bb13bcbf01a16e4c8aa73fff514bd29048f59e6ad536656c  src/patchcore.py
+  79f4782a02687b95037410eb574938a17e7ddcddaae8f40ef669b739d6e4a113  src/paths.py
+  bc9f68dbf0d0ef209b63cf8bd975921d8b2743dc33357df121c28430d033a55c  src/synthetic.py
+hashed 90 earlier files
+
+== SCREW TEST, pc_512 vs v1 pc_raw | post-hoc: screw test set seen before (pc_512, declared extra, not selected) ==
+                model             group   n  auroc  precision  recall    f1  false_reject_rate  FP  TP  pixel_auroc   iou  dice  hit_rate  chance_hit_rate  median_distance_px
+               pc_512               all 119  0.982      1.000   0.773 0.872              0.000 0.0  92        0.995 0.210 0.335     0.899            0.014               0.000
+               pc_512 manipulated_front  24  0.979        NaN   0.583   NaN                NaN NaN  14          NaN 0.262 0.405     1.000            0.013               0.000
+               pc_512      scratch_head  24  1.000        NaN   1.000   NaN                NaN NaN  24          NaN 0.166 0.277     0.958            0.011               0.000
+               pc_512      scratch_neck  25  0.998        NaN   0.960   NaN                NaN NaN  24          NaN 0.205 0.337     1.000            0.013               0.000
+               pc_512       thread_side  23  0.934        NaN   0.391   NaN                NaN NaN   9          NaN 0.155 0.252     0.609            0.016               1.000
+               pc_512        thread_top  23  0.996        NaN   0.913   NaN                NaN NaN  21          NaN 0.264 0.405     0.913            0.018               0.000
+pc_raw (v1, official)               all 119  0.947      0.989   0.748 0.852              0.024 1.0  89        0.990 0.141 0.235     0.807            0.014               0.000
+pc_raw (v1, official) manipulated_front  24  0.888        NaN   0.583   NaN                NaN NaN  14          NaN 0.175 0.286     0.875            0.013               0.000
+pc_raw (v1, official)      scratch_head  24  0.965        NaN   0.667   NaN                NaN NaN  16          NaN 0.144 0.237     0.750            0.011               0.500
+pc_raw (v1, official)      scratch_neck  25  0.998        NaN   1.000   NaN                NaN NaN  25          NaN 0.124 0.218     1.000            0.013               0.000
+pc_raw (v1, official)       thread_side  23  0.885        NaN   0.565   NaN                NaN NaN  13          NaN 0.082 0.141     0.565            0.016               2.828
+pc_raw (v1, official)        thread_top  23  0.994        NaN   0.913   NaN                NaN NaN  21          NaN 0.177 0.291     0.826            0.018               0.000
+
+bootstrap 95% CIs (stratified, 2000, seed 42):
+ model            metric  estimate  ci95_low  ci95_high
+pc_512             auroc     0.982     0.957      0.997
+pc_512            recall     0.773     0.697      0.840
+pc_512 false_reject_rate     0.000     0.000      0.000
+pc_512               iou     0.210     0.191      0.229
+pc_512          hit_rate     0.899     0.840      0.950
+pc_raw             auroc     0.947     0.910      0.976
+pc_raw            recall     0.748     0.672      0.824
+pc_raw false_reject_rate     0.024     0.000      0.073
+pc_raw               iou     0.141     0.124      0.158
+pc_raw          hit_rate     0.807     0.731      0.874
+
+paired differences (descriptive):
+           difference  estimate  ci95_low  ci95_high  share_le_0  n_resamples
+AUROC pc_512 - pc_raw     0.035     0.007      0.065       0.003         2000
+
+== TRANSISTOR TEST | transistor test set, scored once (v2 = v1 models; pc_512 = declared extra) ==
+ model        group  n  auroc  precision  recall    f1  false_reject_rate  FP  TP  pixel_auroc   iou  dice  hit_rate  chance_hit_rate  median_distance_px
+pc_raw          all 40  0.999      0.975   0.975 0.975              0.017 1.0  39        0.980 0.340 0.484     1.000            0.166               0.000
+pc_raw    bent_lead 10  0.998        NaN   1.000   NaN                NaN NaN  10          NaN 0.228 0.357     1.000            0.039               0.000
+pc_raw     cut_lead 10  1.000        NaN   1.000   NaN                NaN NaN  10          NaN 0.241 0.380     1.000            0.038               0.000
+pc_raw damaged_case 10  1.000        NaN   1.000   NaN                NaN NaN  10          NaN 0.392 0.560     1.000            0.060               0.000
+pc_raw    misplaced 10  0.997        NaN   0.900   NaN                NaN NaN   9          NaN 0.500 0.640     1.000            0.528               0.000
+ae_raw          all 40  0.620      1.000   0.175 0.298              0.000 0.0   7        0.757 0.018 0.032     0.400            0.166              30.777
+ae_raw    bent_lead 10  0.585        NaN   0.200   NaN                NaN NaN   2          NaN 0.053 0.088     0.400            0.039              35.939
+ae_raw     cut_lead 10  0.618        NaN   0.100   NaN                NaN NaN   1          NaN 0.002 0.004     0.400            0.038              27.923
+ae_raw damaged_case 10  0.575        NaN   0.000   NaN                NaN NaN   0          NaN 0.000 0.000     0.000            0.060              82.087
+ae_raw    misplaced 10  0.703        NaN   0.400   NaN                NaN NaN   4          NaN 0.019 0.037     0.800            0.528               0.000
+pc_512          all 40  0.985      1.000   0.950 0.974              0.000 0.0  38        0.900 0.310 0.443     0.975            0.166               0.000
+pc_512    bent_lead 10  1.000        NaN   1.000   NaN                NaN NaN  10          NaN 0.263 0.409     1.000            0.039               0.000
+pc_512     cut_lead 10  1.000        NaN   1.000   NaN                NaN NaN  10          NaN 0.138 0.241     1.000            0.038               0.000
+pc_512 damaged_case 10  1.000        NaN   1.000   NaN                NaN NaN  10          NaN 0.481 0.644     1.000            0.060               0.000
+pc_512    misplaced 10  0.940        NaN   0.800   NaN                NaN NaN   8          NaN 0.358 0.479     0.900            0.528               0.000
+
+bootstrap 95% CIs (stratified, 2000, seed 42):
+ model            metric  estimate  ci95_low  ci95_high
+pc_raw             auroc     0.999     0.995      1.000
+pc_raw            recall     0.975     0.925      1.000
+pc_raw false_reject_rate     0.017     0.000      0.050
+pc_raw               iou     0.340     0.289      0.393
+pc_raw          hit_rate     1.000     1.000      1.000
+ae_raw             auroc     0.620     0.507      0.737
+ae_raw            recall     0.175     0.075      0.300
+ae_raw false_reject_rate     0.000     0.000      0.000
+ae_raw               iou     0.018     0.005      0.036
+ae_raw          hit_rate     0.400     0.250      0.550
+pc_512             auroc     0.985     0.953      1.000
+pc_512            recall     0.950     0.875      1.000
+pc_512 false_reject_rate     0.000     0.000      0.000
+pc_512               iou     0.310     0.254      0.370
+pc_512          hit_rate     0.975     0.925      1.000
+
+paired differences (descriptive):
+           difference  estimate  ci95_low  ci95_high  share_le_0  n_resamples
+AUROC pc_raw - ae_raw    0.3783    0.2629     0.4913       0.000         2000
+AUROC pc_512 - pc_raw   -0.0137   -0.0442     0.0012       0.891         2000
+
+thresholds (40 transistor val images):
+        T_image  T_pixel  val_min  val_median  val_max
+model                                                 
+pc_raw  2.13370  1.83306  1.58943     1.75140  2.18859
+ae_raw  0.04925  0.02239  0.01295     0.02297  0.05215
+pc_512  2.54003  2.03479  1.98459     2.12501  2.55093
+
+false rejects at T_image (of 60 good): {'pc_raw': 1, 'ae_raw': 0, 'pc_512': 0}
+
+files read (count per folder): {}
+earlier files: 90 hashed, 0 changed []
+code and decisions.md unchanged during the run
+run time: 0.5 min
