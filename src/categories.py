@@ -27,7 +27,7 @@ CATEGORIES = {
         "background_mask_allowed": False, # a missing / misplaced part shows on the background
         "target_brightness": None,        # set from its 173 train images when the split is made
         "defect_types": ["bent_lead", "cut_lead", "damaged_case", "misplaced"],
-        "split_ready": False,             # the split is created at the start of phase 4, not now
+        "split_ready": True,              # phase 4a: outputs/transistor/results/split.json
     },
 }
 

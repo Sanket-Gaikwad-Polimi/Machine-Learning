@@ -76,12 +76,13 @@ def get_split(category="screw"):
 def list_test(category="screw"):
     """One dict per test image: file, defect ("good" or a type), label (0/1), mask."""
     items = []
-    for folder in sorted((get_category(category)["data"] / "test").iterdir()):
+    data_dir = get_category(category)["data"]
+    for folder in sorted((data_dir / "test").iterdir()):
         for p in sorted(folder.glob("*.png")):
             defect = folder.name
             mask = None if defect == "good" else \
                 f"ground_truth/{defect}/{p.stem}_mask.png"
-            items.append({"file": p.relative_to(DATA_DIR).as_posix(),
+            items.append({"file": p.relative_to(data_dir).as_posix(),
                           "defect": defect,
                           "label": int(defect != "good"),
                           "mask": mask})

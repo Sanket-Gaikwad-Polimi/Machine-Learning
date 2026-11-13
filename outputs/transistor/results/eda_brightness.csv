@@ -1,0 +1,14 @@
+# transistor EDA (data description only, no model)
+group,channel,mean,std
+train/good (213),R,0.3866,0.0156
+train/good (213),G,0.2764,0.0097
+train/good (213),B,0.2415,0.0086
+train/good (213),all,0.3015,0.0108
+test/good (60),R,0.3946,0.017
+test/good (60),G,0.2756,0.0092
+test/good (60),B,0.2374,0.0077
+test/good (60),all,0.3025,0.0109
+test defective (40),R,0.4009,0.0271
+test defective (40),G,0.2855,0.0163
+test defective (40),B,0.2466,0.0139
+test defective (40),all,0.311,0.0188
