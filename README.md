@@ -705,8 +705,18 @@ python phase3_checks.py
 
 **Git-ignored files and how to get them back.** `outputs/checkpoints/` is not in git:
 - `outputs/checkpoints/*.pt` and `*_heatmaps.npz`: the v1 screw models and heat-maps, in Release v1.0 (`checkpoints_v1.zip`, section 7, Level A).
-- `outputs/checkpoints/v2/` (`ae_ssim.pt`, `pc_512.pt`, `pc_512_screw_test_heatmaps.npz`) and `outputs/checkpoints/transistor/` (`autoencoder.pt`, `patchcore_bank.pt`, `pc_512.pt` and the three `*_heatmaps.npz`) are only on our laptop; they are not in any Release yet.
-- Rebuilding them: `phase3c.py` builds `ae_ssim.pt` and `pc_512.pt` if they are missing (13 + 2 min), but it also scores the synthetic set again and rewrites `outputs/v2/phase3/`; restore those files with `git restore outputs/v2/phase3` afterwards. `phase4.py --score transistor` builds the three transistor models if they are missing (about 4 min) and then scores the transistor test set; `phase4.py --score screw` scores the screw test set with `pc_512`. Without the heat-maps these are re-runs, not the official run: the official numbers are the committed CSVs, and a re-run should match them closely (PatchCore exactly or nearly, the autoencoder up to GPU noise). The transistor `ae_raw` and `pc_raw` models alone can also be built (or, if they exist, loaded and checked on the 40 validation images) with `python -m src.autoencoder --category transistor` and `python -m src.patchcore --category transistor`; these also write `ae_history.csv` and three training figures into `outputs/transistor/`, which you can delete.
+- `outputs/checkpoints/v2/` (`ae_ssim.pt`, `pc_512.pt`, `pc_512_screw_test_heatmaps.npz`) and `outputs/checkpoints/transistor/` (`autoencoder.pt`, `patchcore_bank.pt`, `pc_512.pt` and the three `*_heatmaps.npz`): in Release v2.0 (`checkpoints_v2.zip`, about 440 MB). Unzip it into `outputs\checkpoints`; the zip contains the two folders `v2\` and `transistor\`:
+
+  ```powershell
+  $ProgressPreference = 'SilentlyContinue'
+  Invoke-WebRequest "https://github.com/Sanket-Gaikwad-Polimi/Machine-Learning/releases/download/v2.0/checkpoints_v2.zip" -OutFile checkpoints_v2.zip
+  Expand-Archive checkpoints_v2.zip -DestinationPath outputs\checkpoints
+  Remove-Item checkpoints_v2.zip
+  Get-ChildItem outputs\checkpoints\v2, outputs\checkpoints\transistor
+  ```
+
+  The last command must list 3 files in `v2` and 6 in `transistor`. You can also download the zip from the [Releases page](https://github.com/Sanket-Gaikwad-Polimi/Machine-Learning/releases) and run the last three lines.
+- Alternative, rebuilding them yourself: `phase3c.py` builds `ae_ssim.pt` and `pc_512.pt` if they are missing (13 + 2 min), but it also scores the synthetic set again and rewrites `outputs/v2/phase3/`; restore those files with `git restore outputs/v2/phase3` afterwards. `phase4.py --score transistor` builds the three transistor models if they are missing (about 4 min) and then scores the transistor test set; `phase4.py --score screw` scores the screw test set with `pc_512`. Without the heat-maps these are re-runs, not the official run: the official numbers are the committed CSVs, and a re-run should match them closely (PatchCore exactly or nearly, the autoencoder up to GPU noise). The transistor `ae_raw` and `pc_raw` models alone can also be built (or, if they exist, loaded and checked on the 40 validation images) with `python -m src.autoencoder --category transistor` and `python -m src.patchcore --category transistor`; these also write `ae_history.csv` and three training figures into `outputs/transistor/`, which you can delete.
 - Run times on our GPU: `phase3c.py` 20.6 min, `phase4.py --score screw` 1.2 min, `--score transistor` 5.0 min, `--report` 0.5 min.
 
 **Dataset.** `transistor/` is the transistor category of MVTec AD, © 2019 MVTec Software GmbH, CC BY-NC-SA 4.0, included unchanged (see `transistor/license.txt`); cite it as in section 11.
