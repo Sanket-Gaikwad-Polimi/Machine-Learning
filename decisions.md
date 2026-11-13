@@ -156,3 +156,23 @@ This is a result, not a decision: the rule of Phase 3b was applied unchanged, in
 - Split: src/data.get_split("transistor"), the screw code and rule (seed 42): 173 train / 40 validation, no overlap, saved as outputs/transistor/results/split.json; split_ready set to True in src/categories.py. The screw split.json is unchanged (hash).
 - Technical fix (changes nothing for screw): src/data.list_test still built file names relative to the screw folder (a Phase 3a leftover), so it failed for transistor; it now uses the category's own data folder. The screw test list is identical before and after (checked by hash).
 - EDA (eda_transistor.py, no model): defect area at 1024 px, median [min, max] % of the image: bent_lead 1.03 [0.22, 3.65], cut_lead 1.48 [1.02, 3.58], damaged_case 2.31 [0.63, 5.35], misplaced 40.5 [37.7, 49.3] (the mask covers the whole transistor outline); almost the same at 256 px. Brightness (mean of each 256 px image, R / G / B): train/good 0.387 / 0.276 / 0.242, test/good 0.395 / 0.276 / 0.237, test defective 0.401 / 0.286 / 0.247: unlike screw, the good test images are not darker than the training images. Report only, nothing was changed.
+
+### Phase 4b: predictions (written before any test image was scored)
+1. pc_raw beats ae_raw on transistor image AUROC, as on screw. Expected: pc_raw >= 0.90, ae_raw clearly lower.
+2. With no brightness shift on transistor, ae_raw's AUROC there is free of the screw brightness artefact
+   and may be far from screw's 0.75 in either direction.
+3. Per type, PatchCore: damaged_case and cut_lead easiest (local change in texture/shape); misplaced is
+   its weakest or among its weakest types, because each patch of a shifted transistor still looks normal
+   locally and PatchCore does not encode absolute position.
+4. Per type, autoencoder: weakest on the thin-lead defects (bent_lead, cut_lead).
+5. Pixel level: misplaced (median 40% of the image) dominates pixel AUROC, IoU and Dice; IoU/Dice on
+   misplaced are low for both models because heat-maps mark edges, not the whole outline. Hit rate on
+   misplaced is close to meaningless (chance about 40%); compare every type with its chance hit rate.
+6. False rejects at T_image: about 1-3 of the 60 good images for both models (T from the 99th percentile,
+   no brightness shift).
+7. pc_512 vs pc_raw on transistor: defects are 3-5x larger than on screw (median 1-2% vs 0.29%), so
+   resolution matters less: AUROC gain within the CI; possibly better localisation on the leads.
+8. pc_512 on the screw test set (post-hoc): AUROC within the CI of v1's 0.947; localisation equal or better.
+9. Only 10 images per defect type: per-type CIs are very wide, so per-type differences are reported
+   as descriptive only.
+Whether each prediction held is reported after the run, including the wrong ones.
