@@ -10,6 +10,8 @@ We built a system that looks at a photo of a screw, decides whether the screw is
 
 *Output of `python demo.py screw/test/scratch_neck/004.png`. Top row, PatchCore: the score is 1.35 × its threshold, so the screw is called DEFECTIVE, and the predicted region (red) covers the scratch (green outline). Bottom row, autoencoder: the score is 0.49 × its threshold, so the screw is called GOOD and the defect is missed. Columns: input image, heat-map, predicted region, true defect mask.*
 
+> **v2 (November 2026):** after v1 we tried to improve both models without touching the test set, and tested them on a second, unseen category (transistor). Result: no improvement passed our pre-registered rule, so v2 = v1; on transistor PatchCore reaches an AUROC of 0.999 and the autoencoder 0.620. See [section 12](#12-v2-after-v1-improvements-and-a-second-category).
+
 ## Contents
 
 1. [The problem in plain words](#1-the-problem-in-plain-words)
@@ -23,6 +25,7 @@ We built a system that looks at a photo of a screw, decides whether the screw is
 9. [Rules we followed](#9-rules-we-followed)
 10. [Troubleshooting](#10-troubleshooting)
 11. [Licence, citations and credits](#11-licence-citations-and-credits)
+12. [v2: after v1, improvements and a second category](#12-v2-after-v1-improvements-and-a-second-category)
 
 ## 1. The problem in plain words
 
@@ -627,3 +630,83 @@ These rules make the results trustworthy: no choice was made by looking at test 
 - **Pretrained network:** wide_resnet50_2 with ImageNet weights (`IMAGENET1K_V1`) from torchvision.
 - **Course:** Machine Learning for Mechanical Systems, Politecnico di Milano, 2026–27, Prof. Loris Roveda. Project 3: vision-based industrial defect and anomaly detection.
 - **Team:** Shayan Dorriz, Sanket Ganesh Gaikwad, Antoine Hervé Marie Jeanselme.
+
+## 12. v2: after v1, improvements and a second category
+
+Everything in sections 1–11 is v1 and stays the official screw result. v2 came afterwards, when we had already seen the screw test results, so we were extra strict: every decision was written in [decisions.md](decisions.md) (section "v2") and committed **before** the experiment it governs, every script proves with SHA-256 hashes that no v1 file changed, and each test set was scored exactly once. decisions.md is the full record; this section is the short version.
+
+### 12.1 What v2 tried on screw (Phases 1–3)
+
+| Phase | What | Main result |
+|---|---|---|
+| 1 | analysis of the saved v1 results only (`analysis.py`, `outputs/analysis/`) | PatchCore's heat-map maximum lies within 8 px of the real defect in 81% of the defective test images (autoencoder 33%, chance 1.4%); AUROC 0.947 [95% CI 0.910, 0.976] vs 0.752 [0.659, 0.833]; the gap +0.195 [+0.102, +0.299] is not luck |
+| 2 | 160 synthetic defects (scratch, spot, cut-paste, thread smear) drawn on the 40 **validation** screws (`src/synthetic.py`, `phase2.py`) | a test set without using any test image; v1 baseline AUROC: PatchCore 0.705, autoencoder 0.520 |
+| 3 | 6 fixed candidates scored once on the synthetic set (`phase3c.py`): PatchCore at 512 px, with a background mask, or both; autoencoder with an SSIM loss, a mask, or both | **no candidate passed** the rule fixed in advance (AUROC gain with a 95% CI above 0, no big loss in localisation or on any defect type), so **v2 = v1**. Closest: pc_512_mask, +0.038 [−0.0004, +0.081] |
+
+### 12.2 Transistor: a category nobody had scored (Phase 4)
+
+The same v1 models and settings, trained only on the 173 good training images of MVTec AD transistor (40 more for the threshold), in colour, with no augmentation (a rotated transistor is itself a defect) and no background mask. Nothing was tuned on transistor. `pc_512` is a declared extra, not selected. 60 good and 40 defective test images, scored once; 95% CIs from 2000 stratified bootstrap resamples.
+
+| Model | image AUROC [95% CI] | recall at T | false rejects | pixel AUROC | IoU | Dice | hit rate (chance 0.166) |
+|---|---|---|---|---|---|---|---|
+| **pc_raw** (v2 = v1) | **0.999** [0.995, 1.000] | 0.975 (39/40) | 1 / 60 | 0.980 | 0.340 | 0.484 | 1.000 |
+| ae_raw (v2 = v1) | 0.620 [0.507, 0.737] | 0.175 (7/40) | 0 / 60 | 0.757 | 0.018 | 0.032 | 0.400 |
+| pc_512 (extra) | 0.985 [0.953, 1.000] | 0.950 (38/40) | 0 / 60 | 0.900 | 0.310 | 0.443 | 0.975 |
+
+PatchCore minus autoencoder: +0.378 [+0.263, +0.491]. pc_512 minus pc_raw: −0.014 [−0.044, +0.001].
+
+Per defect type (10 images each, descriptive only), pc_raw / ae_raw / pc_512:
+
+| Type | share of defect pixels | image AUROC | caught (of 10) | pixel AUROC* | chance hit rate |
+|---|---|---|---|---|---|
+| bent_lead | 3.3% | 0.998 / 0.585 / 1.000 | 10 / 2 / 10 | 0.997 / 0.931 / 0.971 | 0.04 |
+| cut_lead | 3.4% | 1.000 / 0.618 / 1.000 | 10 / 1 / 10 | 0.996 / 0.859 / 0.880 | 0.04 |
+| damaged_case | 5.9% | 1.000 / 0.575 / 1.000 | 10 / 0 / 10 | 0.997 / 0.867 / 0.997 | 0.06 |
+| misplaced | 87.3% | 0.997 / 0.703 / 0.940 | 9 / 4 / 8 | 0.985 / 0.744 / 0.903 | 0.53 |
+
+\* computed after 4c from saved heat-maps, no re-scoring (that type's 10 images plus the 60 good ones).
+
+![Transistor test examples with the heat-maps of the three models](outputs/transistor/figures/eval_examples.png)
+
+### 12.3 pc_512, the declared extra
+
+- **Screw** (post-hoc: screw test set seen before): AUROC 0.982 [0.957, 0.997] vs v1's 0.947, paired difference +0.035 [+0.007, +0.065]; 0 false rejects of 41; IoU 0.210 vs 0.141; hit rate 0.899 vs 0.807. Better, mostly on manipulated_front and thread_side, but this is only an observation: it did not pass the rule on the synthetic set, and we had seen the screw test set before.
+- **Transistor**: no better than pc_raw (see above). Transistor defects are 3–5 times larger than screw defects, so a finer resolution matters less.
+
+### 12.4 Our predictions (written before scoring) and what happened
+
+1. PatchCore ≥ 0.90 and the autoencoder clearly lower: **held** (0.999 vs 0.620).
+2. The autoencoder far from its screw AUROC (0.75): **held** (0.620).
+3. PatchCore easiest on damaged_case / cut_lead, weakest on misplaced: **held**, all near the ceiling.
+4. The autoencoder weakest on the thin leads: **did not hold**; its weakest type is damaged_case.
+5. Misplaced dominates the pixel metrics, with low IoU on it: **partly**; it dominates pixel AUROC, but PatchCore's IoU on misplaced is its best (0.50).
+6. 1–3 false rejects of 60 for both models: **partly** (pc_raw 1, ae_raw 0).
+7. pc_512 no better than pc_raw on transistor, better localisation on the leads: **partly** (AUROC as predicted, localisation not better).
+8. pc_512 on screw within v1's CI, localisation equal or better: **partly** (localisation better, but AUROC above v1's CI).
+9. Per-type numbers descriptive only: **held** (as a reporting rule).
+
+**In short:** the main v1 conclusion holds on a second, unseen category. Pretrained PatchCore features detect and localise defects far better than our autoencoder, which stays close to guessing on transistor even without the screw brightness artefact.
+
+### 12.5 How to run v2
+
+All scripts take `--category screw` (the default, exactly v1) or `--category transistor`.
+
+```powershell
+python demo.py transistor/test/misplaced/000.png transistor/test/good/014.png --category transistor --no-show
+python phase4.py --report
+python analysis.py
+python phase3_checks.py
+```
+
+- `demo.py --category transistor` uses the transistor models and thresholds and shows the images in colour. Its figures go to `outputs/transistor/figures/demo_*.png`; `transistor/test/good/014.png` is pc_raw's only false reject. Scores from the demo match the saved ones to about 0.0001 (one image at a time instead of batches of 8); with `--category screw` the output is identical to v1.
+- `phase4.py --report` redraws every Phase 4 table and figure from the saved scores and heat-maps (no model runs). `phase4.py --score screw` and `--score transistor` are the one-time scoring passes: they refuse to run if their saved heat-maps already exist.
+- `evaluate.py --category transistor` is not used for transistor: it expects the four v1 variants, including the brightness-normalised ones, which are not defined there. Phase 4 used `phase4.py`; `python evaluate.py --report-only` (screw) works exactly as in v1.
+- `eda_transistor.py` redraws the transistor EDA (no model).
+
+**Git-ignored files and how to get them back.** `outputs/checkpoints/` is not in git:
+- `outputs/checkpoints/*.pt` and `*_heatmaps.npz`: the v1 screw models and heat-maps, in Release v1.0 (`checkpoints_v1.zip`, section 7, Level A).
+- `outputs/checkpoints/v2/` (`ae_ssim.pt`, `pc_512.pt`, `pc_512_screw_test_heatmaps.npz`) and `outputs/checkpoints/transistor/` (`autoencoder.pt`, `patchcore_bank.pt`, `pc_512.pt` and the three `*_heatmaps.npz`) are only on our laptop; they are not in any Release yet.
+- Rebuilding them: `phase3c.py` builds `ae_ssim.pt` and `pc_512.pt` if they are missing (13 + 2 min), but it also scores the synthetic set again and rewrites `outputs/v2/phase3/`; restore those files with `git restore outputs/v2/phase3` afterwards. `phase4.py --score transistor` builds the three transistor models if they are missing (about 4 min) and then scores the transistor test set; `phase4.py --score screw` scores the screw test set with `pc_512`. Without the heat-maps these are re-runs, not the official run: the official numbers are the committed CSVs, and a re-run should match them closely (PatchCore exactly or nearly, the autoencoder up to GPU noise). The transistor `ae_raw` and `pc_raw` models alone can also be built (or, if they exist, loaded and checked on the 40 validation images) with `python -m src.autoencoder --category transistor` and `python -m src.patchcore --category transistor`; these also write `ae_history.csv` and three training figures into `outputs/transistor/`, which you can delete.
+- Run times on our GPU: `phase3c.py` 20.6 min, `phase4.py --score screw` 1.2 min, `--score transistor` 5.0 min, `--report` 0.5 min.
+
+**Dataset.** `transistor/` is the transistor category of MVTec AD, © 2019 MVTec Software GmbH, CC BY-NC-SA 4.0, included unchanged (see `transistor/license.txt`); cite it as in section 11.

@@ -41,7 +41,8 @@ def _frozen(category="screw"):
         for f in [th_file] + [cat["checkpoints"] / m[1] for m in MODELS.values()]:
             if not f.exists():
                 raise FileNotFoundError(f"{f} is missing. Run the earlier steps; demo.py never refits.")
-        fz = {"th": pd.read_csv(th_file).set_index("variant")}
+        th = pd.read_csv(th_file)                      # screw (v1): column "variant"; transistor: "model"
+        fz = {"th": th.set_index("variant" if "variant" in th.columns else "model")}
         for name, (cls, file, _) in MODELS.items():
             det = cls.load(cat["checkpoints"] / file)
             assert det.config["normalize_brightness"] is False, f"{file} is not the raw variant"
