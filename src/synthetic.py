@@ -31,11 +31,16 @@ def _load_1024(rel_path):
     return np.asarray(Image.open(DATA_DIR / rel_path).convert("L"), dtype=np.float32) / 255.0
 
 
+def _resize(img01, size):
+    """float 1024 px in [0, 1] -> 8 bit -> PIL bilinear to size -> float, like load_image."""
+    u8 = np.round(np.clip(img01, 0, 1) * 255).astype(np.uint8)
+    small = Image.fromarray(u8).resize((size, size), Image.Resampling.BILINEAR)
+    return np.asarray(small, dtype=np.float32) / 255.0
+
+
 def _to_256(img01):
     """float 1024 px in [0, 1] -> 8 bit -> PIL bilinear to 256 -> float, like load_image."""
-    u8 = np.round(np.clip(img01, 0, 1) * 255).astype(np.uint8)
-    small = Image.fromarray(u8).resize((IMG_SIZE, IMG_SIZE), Image.Resampling.BILINEAR)
-    return np.asarray(small, dtype=np.float32) / 255.0
+    return _resize(img01, IMG_SIZE)
 
 
 def _mask_to_256(mask):
@@ -174,13 +179,24 @@ def make_one(img, fg, inner, ctx, clean256, kind, rng):
                     max_change=float(change[mask == 1].max()),
                     mean_change_in_mask=float(change[mask == 1].mean()),
                     changed_px_outside=int((change[outside] > 1.5 / 255).sum()), **params)
-        return small, mask, info
+        return small, mask, info, out
     raise RuntimeError(f"{kind}: no valid defect after {MAX_DRAWS} draws")
 
 
-def make_synthetic(files):
-    """One defect of each type on each file: images, masks (N x 256 x 256) and a table."""
+def make_synthetic(files, image_sizes=(), bg_mask_sizes=()):
+    """One defect of each type on each file: images, masks (N x 256 x 256) and a table.
+
+    v2 phase 3b, technical options (off by default; they change no random draw and no
+    256 px image). If either is given, a 4th value is returned:
+      {"images": {size: N x size x size}, "bg_masks": {size: N x size x size}}
+    image_sizes=(512,): the same defective 1024 px images resized to 512 exactly like
+      data.load_image (8 bit, PIL bilinear);
+    bg_mask_sizes=(256, 512): the background mask of each DEFECTIVE 1024 px image
+      (src/masks.py), computed from the image itself, as for a real image.
+    """
     images, masks, rows = [], [], []
+    big = {s: [] for s in image_sizes}
+    bg = {s: [] for s in bg_mask_sizes}
     for i, f in enumerate(files):
         img = _load_1024(f)
         fg = screw_region(img)
@@ -189,11 +205,23 @@ def make_synthetic(files):
         clean256 = _to_256(img)
         for k, kind in enumerate(TYPES):
             rng = np.random.default_rng([SEED, i, k])
-            small, mask, info = make_one(img, fg, inner, ctx, clean256, kind, rng)
+            small, mask, info, out = make_one(img, fg, inner, ctx, clean256, kind, rng)
             images.append(small)
             masks.append(mask)
             rows.append({"file": f, "val_index": i, **info})
-    return np.stack(images), np.stack(masks), pd.DataFrame(rows)
+            for s in big:
+                big[s].append(_resize(out, s))
+            if bg:
+                from src.masks import mask_to_size, object_mask_1024
+                # the defective image as a real photo would be: 8-bit rounded, then the mask rule
+                obj = object_mask_1024(np.round(np.clip(out, 0, 1) * 255).astype(np.float32) / 255.0)
+                for s in bg:
+                    bg[s].append(mask_to_size(obj, s))
+    result = (np.stack(images), np.stack(masks), pd.DataFrame(rows))
+    if big or bg:
+        return result + ({"images": {s: np.stack(v) for s, v in big.items()},
+                          "bg_masks": {s: np.stack(v) for s, v in bg.items()}},)
+    return result
 
 
 if __name__ == "__main__":

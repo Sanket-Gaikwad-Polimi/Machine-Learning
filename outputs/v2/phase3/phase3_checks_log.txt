@@ -1,0 +1,31 @@
+phase3_checks.py started 2026-11-13 01:11 | v2 phase 3b checks (no candidate scored)
+hashed 69 files (v1 outputs, analysis, v2/phase2)
+
+== 1. BACKGROUND MASKS OF THE 40 VALIDATION SCREWS ==
+     val_index  screw_area_pct  mask_area_pct  loose_px_outside_mask  loose_max_dist_px  dark025_px_outside_mask
+min        0.0           9.328         16.930                 7970.0             70.093                      0.0
+50%       19.5           9.924         17.302                14612.0             96.020                      0.5
+max       39.0          10.826         18.120                29371.0            487.000                    184.0
+images with pixels darker than median - 0.25 outside the mask (metal level, shadow excluded):  val_index  dark025_px_outside_mask
+         1                      178
+         2                       38
+         3                      169
+         4                        4
+         5                       91
+         6                       55
+         7                        1
+        11                      184
+        13                       32
+        14                      131
+        18                       30
+        20                        2
+        23                        3
+        30                        9
+        32                       34
+        33                       86
+        35                        1
+        37                        2
+        38                       10
+        39                       32
+
+== 2. UNIT CHECKS ==

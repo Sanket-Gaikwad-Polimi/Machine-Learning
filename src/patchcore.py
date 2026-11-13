@@ -32,6 +32,14 @@ v2: category="screw" (default, identical to v1) or another category from
 src/categories.py. Greyscale images are repeated to 3 channels exactly as in v1;
 colour images (3 x H x W) keep their 3 channels, with the same ImageNet normalisation.
 
+v2 phase 3b options (all off by default, so v1 is unchanged):
+  size=512, patch_sample=0.25   512 px input (64 x 64 patch grid); a random 25% of each
+                    training image's patch vectors (numpy default_rng(seed)) before the same
+                    coreset, so the bank keeps v1's size; heat-map smoothed with sigma 4 x size/256
+                    and returned at 256 px (PIL bilinear) for every metric; score = max patch score.
+  predict_many(images, masks=...)   background mask at the input size: heat-map outside the
+                    mask = its minimum, score = max patch score over cells with a mask pixel.
+
 Run: python -m src.patchcore [--rebuild] [--normalize-brightness] [--category screw]
 """
 import argparse
@@ -41,11 +49,12 @@ import time
 import numpy as np
 import torch
 import torch.nn.functional as F
+from PIL import Image
 from scipy.ndimage import gaussian_filter
 from torchvision.models import wide_resnet50_2
 from tqdm import tqdm
 
-from src.categories import get_category
+from src.categories import get_category, require_background_mask
 from src.data import IMG_SIZE, SEED, get_split, load_images, shift_brightness, to_display, to_tensor
 from src.paths import CHECKPOINTS
 
@@ -63,9 +72,10 @@ def _set_seed(seed):
 
 class PatchCoreDetector:
     def __init__(self, size=IMG_SIZE, normalize_brightness=False, coreset_ratio=0.10,
-                 proj_dim=128, seed=SEED, category="screw", device=None):
+                 proj_dim=128, seed=SEED, category="screw", patch_sample=1.0, device=None):
         self.config = dict(size=size, normalize_brightness=normalize_brightness,
-                           coreset_ratio=coreset_ratio, proj_dim=proj_dim, seed=seed, category=category)
+                           coreset_ratio=coreset_ratio, proj_dim=proj_dim, seed=seed, category=category,
+                           patch_sample=patch_sample)
         self.color = get_category(category)["channels"] == 3
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         _set_seed(seed)
@@ -77,7 +87,7 @@ class PatchCoreDetector:
     # ---- features ---------------------------------------------------------
     @torch.inference_mode()
     def _embed(self, images):
-        """numpy B x H x W (colour: B x 3 x H x W) in [0, 1] -> patch features B x 1536 x 32 x 32 (CPU)."""
+        """numpy B x H x W (colour: B x 3 x H x W) in [0, 1] -> patch features B x 1536 x H/8 x W/8 (CPU)."""
         x = np.asarray(images, dtype=np.float32)
         if self.config["normalize_brightness"]:
             x = shift_brightness(x, self.config["category"])
@@ -117,12 +127,18 @@ class PatchCoreDetector:
         n = len(train_images)
         t0 = time.time()
         feats = None
+        frac = self.config.get("patch_sample", 1.0)
+        rng = np.random.default_rng(self.config["seed"])     # used only if frac < 1 (v2)
         for s in range(0, n, batch_size):
             e = self._embed(train_images[s:s + batch_size])
-            if feats is None:                                 # preallocate once: N*1024 x 1536
+            if feats is None:                                 # preallocate once: N*k x 1536
                 hw = e.shape[2] * e.shape[3]
-                feats = torch.empty(n * hw, EMB_DIM, dtype=torch.float32)
-            feats[s * hw:(s + len(e)) * hw] = e.permute(0, 2, 3, 1).reshape(-1, EMB_DIM)
+                k = hw if frac >= 1 else int(round(frac * hw))
+                feats = torch.empty(n * k, EMB_DIM, dtype=torch.float32)
+            v = e.permute(0, 2, 3, 1).reshape(len(e), hw, EMB_DIM)
+            if k < hw:                                        # v2: random share of each image's patches
+                v = torch.stack([vi[torch.from_numpy(rng.choice(hw, k, replace=False))] for vi in v])
+            feats[s * k:(s + len(e)) * k] = v.reshape(-1, EMB_DIM)
         print(f"feature extraction: {time.time() - t0:.1f} s | full bank "
               f"{tuple(feats.shape)} = {feats.numel() * 4 / 2**30:.2f} GB")
         t1 = time.time()
@@ -147,10 +163,16 @@ class PatchCoreDetector:
             out.append(d2.min(dim=1).values.clamp_min(0).sqrt().cpu())
         return torch.cat(out)
 
-    def predict_many(self, images, batch_size=8):
-        """Scores (N,) and heat-maps (N x H x W, float32). Higher = more anomalous."""
+    def predict_many(self, images, batch_size=8, masks=None):
+        """Scores (N,) and heat-maps (N x 256 x 256, float32). Higher = more anomalous.
+        masks (N x H x W bool at the input size, optional, v2): see the module docstring."""
         images = np.asarray(images, dtype=np.float32)
         size = images.shape[-1]
+        sigma = SMOOTH_SIGMA * size / IMG_SIZE                # 4 at 256 (v1), 8 at 512
+        if masks is not None:
+            require_background_mask(self.config["category"])
+            masks = np.asarray(masks, dtype=bool)
+            assert masks.shape == (len(images), size, size), f"masks {masks.shape} vs images {images.shape}"
         scores, heatmaps = [], []
         for s in range(0, len(images), batch_size):
             e = self._embed(images[s:s + batch_size])         # B x 1536 x h x w
@@ -161,10 +183,22 @@ class PatchCoreDetector:
             except torch.cuda.OutOfMemoryError:               # fall back to the CPU
                 torch.cuda.empty_cache()
                 d = self._nn_dist(q, self.bank.cpu())
-            patch = d.reshape(bsz, 1, h, w)                   # 32 x 32 patch scores
-            scores.append(patch.reshape(bsz, -1).max(dim=1).values.numpy())
+            patch = d.reshape(bsz, 1, h, w)                   # 32 x 32 patch scores (64 x 64 at 512)
             up = F.interpolate(patch, size=(size, size), mode="bilinear", align_corners=False)
-            heatmaps += [gaussian_filter(m, SMOOTH_SIGMA) for m in up[:, 0].numpy()]
+            maps = [gaussian_filter(m, sigma) for m in up[:, 0].numpy()]
+            if masks is None:
+                scores.append(patch.reshape(bsz, -1).max(dim=1).values.numpy())
+            else:
+                from src.masks import apply_mask
+                mb = masks[s:s + bsz]
+                cells = mb.reshape(bsz, h, size // h, w, size // w).any(axis=(2, 4))   # cell has a mask pixel
+                pv = patch[:, 0].numpy()
+                scores.append(np.array([p[c].max() for p, c in zip(pv, cells)], dtype=np.float32))
+                maps = list(apply_mask(np.stack(maps), mb))
+            if size != IMG_SIZE:                              # v2: every metric at 256 px
+                maps = [np.asarray(Image.fromarray(m.astype(np.float32))
+                                   .resize((IMG_SIZE, IMG_SIZE), Image.Resampling.BILINEAR)) for m in maps]
+            heatmaps += maps
         return np.concatenate(scores), np.stack(heatmaps).astype(np.float32)
 
     def predict(self, image):

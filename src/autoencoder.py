@@ -27,6 +27,12 @@ src/categories.py. in_ch = 1 (greyscale) or 3 (colour) and the augmentation
 ("rot_flip" or "none") come from the category unless given; no layer is renamed,
 so the v1 checkpoints load unchanged.
 
+v2 phase 3b options (all off by default, so v1 is unchanged):
+  loss="mse_ssim"   training loss 0.5 MSE + 0.5 (1 - mean SSIM), heat-map 1 - local SSIM
+                    (11 x 11 Gaussian window, sigma 1.5, reflect padding), Gaussian sigma 4;
+  predict_many(images, masks=...)   background mask: heat-map outside the mask = its minimum,
+                    score = maximum inside the mask (src/masks.py).
+
 Run: python -m src.autoencoder [--retrain] [--normalize-brightness] [--category screw]
 """
 import argparse
@@ -40,12 +46,41 @@ from torch import nn
 from torchvision.transforms.functional import rotate
 from scipy.ndimage import gaussian_filter
 
-from src.categories import get_category
+from src.categories import get_category, require_background_mask
 from src.data import IMG_SIZE, SEED, get_split, load_images, shift_brightness, to_display
 from src.paths import CHECKPOINTS
 
 LATENT_CH = 32
 SMOOTH_SIGMA = 4
+SSIM_WIN, SSIM_SIGMA, SSIM_C1, SSIM_C2 = 11, 1.5, 0.01 ** 2, 0.03 ** 2   # v2 phase 3b, data range 1
+
+
+def ssim_map(x, y):
+    """Local SSIM of two tensors N x C x H x W in [0, 1] -> N x C x H x W (same size).
+
+    11 x 11 Gaussian window (sigma 1.5) per channel, reflect padding, C1 = 0.01^2,
+    C2 = 0.03^2. 1 = locally identical; lower = locally different structure.
+    """
+    r = SSIM_WIN // 2
+    g = torch.exp(-(torch.arange(SSIM_WIN, dtype=x.dtype, device=x.device) - r) ** 2 / (2 * SSIM_SIGMA ** 2))
+    g = g / g.sum()
+    c = x.shape[1]
+    w = (g[:, None] * g[None, :]).expand(c, 1, SSIM_WIN, SSIM_WIN).contiguous()
+
+    def blur(z):
+        return nn.functional.conv2d(nn.functional.pad(z, (r, r, r, r), mode="reflect"), w, groups=c)
+
+    mx, my = blur(x), blur(y)
+    vx, vy, cxy = blur(x * x) - mx ** 2, blur(y * y) - my ** 2, blur(x * y) - mx * my
+    return ((2 * mx * my + SSIM_C1) * (2 * cxy + SSIM_C2)) / ((mx ** 2 + my ** 2 + SSIM_C1) * (vx + vy + SSIM_C2))
+
+
+def _loss(rec, x, kind):
+    """v1 "mse", or v2 "mse_ssim" = 0.5 MSE + 0.5 (1 - mean SSIM)."""
+    mse = nn.functional.mse_loss(rec, x)
+    if kind == "mse":
+        return mse
+    return 0.5 * mse + 0.5 * (1 - ssim_map(rec, x).mean())
 
 
 def _down(c_in, c_out):
@@ -105,12 +140,12 @@ def _set_seed(seed):
 class AutoencoderDetector:
     def __init__(self, size=IMG_SIZE, normalize_brightness=False, epochs=120, batch_size=8,
                  lr=1e-3, seed=SEED, latent_ch=LATENT_CH, category="screw", in_ch=None, augment=None,
-                 device=None):
+                 loss="mse", device=None):
         cat = get_category(category)
         self.config = dict(size=size, normalize_brightness=normalize_brightness, epochs=epochs,
                            batch_size=batch_size, lr=lr, seed=seed, latent_ch=latent_ch,
                            category=category, in_ch=in_ch or cat["channels"],
-                           augment=augment or cat["ae_augment"])
+                           augment=augment or cat["ae_augment"], loss=loss)
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         _set_seed(seed)
         self.model = ConvAutoencoder(latent_ch, self.config["in_ch"]).to(self.device)
@@ -149,13 +184,13 @@ class AutoencoderDetector:
             total = 0.0
             for idx in torch.randperm(len(x_train)).split(c["batch_size"]):
                 batch = _augment(x_train[idx].to(self.device), c["augment"])
-                loss = nn.functional.mse_loss(self.model(batch), batch)
+                loss = _loss(self.model(batch), batch, c["loss"])
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
                 total += loss.item() * len(idx)
             train_loss = total / len(x_train)
-            val_loss = (nn.functional.mse_loss(self._reconstruct(x_val), x_val).item()
+            val_loss = (_loss(self._reconstruct(x_val), x_val, c["loss"]).item()
                         if x_val is not None else float("nan"))
             self.history["epoch"].append(epoch)
             self.history["train_loss"].append(train_loss)
@@ -169,13 +204,21 @@ class AutoencoderDetector:
         self.model.load_state_dict(best_state)
         return self
 
-    def predict_many(self, images):
-        """Scores (N,) and smoothed squared-error heat-maps (N x H x W, float32).
-        Colour: the squared error is averaged over the 3 channels."""
+    def predict_many(self, images, masks=None):
+        """Scores (N,) and smoothed heat-maps (N x H x W, float32).
+        v1 ("mse"): squared error; v2 "mse_ssim": 1 - local SSIM. Colour: mean over the 3 channels.
+        masks (N x H x W bool, optional, v2): heat-map outside = its minimum, score = max inside."""
         x = self._prepare(images)
-        err = (x - self._reconstruct(x)) ** 2
+        rec = self._reconstruct(x)
+        err = (x - rec) ** 2 if self.config.get("loss", "mse") == "mse" else 1 - ssim_map(rec, x)
         err = (err[:, 0] if self.config["in_ch"] == 1 else err.mean(dim=1)).numpy()
         heatmaps = np.stack([gaussian_filter(e, SMOOTH_SIGMA) for e in err]).astype(np.float32)
+        if masks is not None:
+            from src.masks import apply_mask
+            require_background_mask(self.config["category"])
+            heatmaps = apply_mask(heatmaps, masks)
+            scores = np.array([m[k].max() for m, k in zip(heatmaps, np.asarray(masks, bool))], dtype=np.float32)
+            return scores, heatmaps
         return heatmaps.reshape(len(heatmaps), -1).max(axis=1), heatmaps
 
     def predict(self, image):
